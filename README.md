@@ -2,10 +2,6 @@
 
 This tool lets you interact with values and functions directly.
 
-Currently there are some weaknesses regarding handlingn keyboard input.
-Arrows do not navigate history and ^C quits immediately. It is not yet
-clear to me how to handle things things in a cross-platform way in Haskell.
-
 ### Install
 
 Install [Elm](https://github.com/evancz/Elm/blob/master/README.md#install)
