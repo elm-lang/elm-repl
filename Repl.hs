@@ -49,7 +49,7 @@ runRepl env =
                               , BSC.isInfixOf "\n" tipe
                               , BSC.length value + BSC.length tipe > 80 ]    
                message = BS.concat [ if isTooLong then value' else value, tipe ]
-           in  BSC.putStrLn message
+           in  if BSC.null value' then return () else BSC.putStrLn message
   where
     tempElm = "repl-temp-000.elm"
     tempJS  = "build" </> replaceExtension tempElm "js"
