@@ -1,0 +1,34 @@
+Name:                elm-repl
+Version:             0.1
+Synopsis:            a REPL for Elm
+Description:         A REPL for evaluating Elm expressions
+
+Homepage:            http://elm-lang.org
+
+License:             BSD3
+License-file:        LICENSE
+
+Author:              Evan Czaplicki
+Maintainer:          info@elm-lang.org
+Copyright:           Copyright: (c) 2011-2013 Evan Czaplicki
+
+Category:            Compiler, Language
+
+Build-type:          Simple
+
+Cabal-version:       >=1.8
+
+source-repository head
+  type:     git
+  location: git://github.com/evancz/Elm.git
+
+Executable elm-repl
+  Main-is:             Repl.hs
+  Build-depends:       base >=4.2 && <5,
+                       bytestring,
+                       containers >= 0.3,
+                       Elm >= 0.10,
+                       filepath,
+                       transformers >= 0.2,
+                       mtl >= 2,
+                       process
