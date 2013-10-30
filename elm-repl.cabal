@@ -27,6 +27,7 @@ Executable elm-repl
   Build-depends:       base >=4.2 && <5,
                        bytestring,
                        containers >= 0.3,
+                       directory,
                        Elm >= 0.10,
                        filepath,
                        transformers >= 0.2,

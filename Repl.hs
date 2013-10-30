@@ -5,10 +5,14 @@ import qualified Data.ByteString.Char8 as BSC
 import qualified Data.ByteString as BS
 import qualified Data.Map as Map
 import qualified Language.Elm as Elm
-import System.IO
-import System.FilePath
-import System.Process
+import Control.Exception
+import Prelude hiding (catch)
+import System.Directory
 import System.Exit
+import System.FilePath
+import System.IO
+import System.IO.Error hiding (catch)
+import System.Process
 
 import qualified Environment as Env
 
@@ -40,7 +44,7 @@ getInput = get "> " ""
 runRepl :: Env.Repl -> IO Bool
 runRepl env =
   do writeFile tempElm (Env.toElm env)
-     onSuccess compile $ \types -> do
+     result <- onSuccess compile $ \types -> do
        reformatJS tempJS
        onSuccess run $ \value' ->
            let value = BSC.init value'
@@ -50,6 +54,8 @@ runRepl env =
                               , BSC.length value + BSC.length tipe > 80 ]    
                message = BS.concat [ if isTooLong then value' else value, tipe ]
            in  if BSC.null value' then return () else BSC.putStrLn message
+     removeIfExists tempElm
+     return result
   where
     tempElm = "repl-temp-000.elm"
     tempJS  = "build" </> replaceExtension tempElm "js"
@@ -98,4 +104,8 @@ scrapeOutputType types
             (line,rest) = BSC.break (=='\n') str
             (line',rest') = freshLine rest
 
-            
+removeIfExists :: FilePath -> IO ()
+removeIfExists fileName = removeFile fileName `catch` handleExists
+  where handleExists e
+          | isDoesNotExistError e = return ()
+          | otherwise = throwIO e
