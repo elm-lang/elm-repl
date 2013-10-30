@@ -9,21 +9,22 @@ import System.FilePath
 import System.Process
 import System.Exit
 
-main = loop [] Map.empty
+import qualified Environment as Env
 
-loop :: [String] -> Map.Map String String -> IO ()
-loop history env = do
-  expr <- getExpression
-  case expr of
-    "" -> loop history env
+main = loop Env.empty
+
+loop :: Env.Repl -> IO ()
+loop env = do
+  str <- getInput
+  case str of
+    "" -> loop env
     _  -> do
-      let prev = case history of { it:_ -> [("it",it)] ; _ -> [] }
-          env' = foldr (uncurry Map.insert) env $ ("it_000",expr) : prev
+      let env' = Env.insert str env
       success <- runRepl env'
-      if success then loop (expr:history) env'
-                 else loop history env
+      loop (if success then env' else env)
 
-getExpression = get "> " ""
+getInput :: IO String
+getInput = get "> " ""
     where
       get str old = do
         putStr str
@@ -31,12 +32,13 @@ getExpression = get "> " ""
         new <- getLine
         continueWith (old ++ new)
 
-      continueWith expr
-        | null expr || last expr /= '\\' = return expr
-        | otherwise = get "| " (init expr ++ "\n")
+      continueWith str
+        | null str || last str /= '\\' = return str
+        | otherwise = get "| " (init str ++ "\n")
 
+runRepl :: Env.Repl -> IO Bool
 runRepl env =
-  do writeFile tempElm (toElm env)
+  do writeFile tempElm (Env.toElm env)
      onSuccess compile $ \_ -> do
        reformatJS tempJS
        onSuccess run putStr
@@ -60,16 +62,12 @@ runRepl env =
                do success =<< hGetContents out
                   return True
 
-toElm env = unlines $ "module Repl where" : map toDecl (Map.toList env)
-    where
-      toDecl (name,expr) =
-          name ++ " =" ++ concatMap ("\n  "++) (lines expr)
-
+reformatJS :: String -> IO ()
 reformatJS tempJS =
   do rts <- BS.readFile =<< Elm.runtime
      src <- BS.readFile tempJS
-     BS.length src `seq` BS.writeFile tempJS (BS.concat [rts,src,out])
+     BS.length src `seq` BS.writeFile tempJS (BS.concat (rts:src:out))
   where
-    out = "var context = { inputs:[] };\n\
-          \var repl = Elm.Repl.make(context);\n\
-          \console.log(context.Native.Show.values.show(repl.it_000));"
+    out = [ "var context = { inputs:[] };\n"
+          , "var repl = Elm.Repl.make(context);\n"
+          , "console.log(context.Native.Show.values.show(repl.", Env.expr, "));" ]
