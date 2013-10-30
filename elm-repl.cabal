@@ -30,6 +30,7 @@ Executable elm-repl
                        directory,
                        Elm >= 0.10,
                        filepath,
+                       haskeline,
                        transformers >= 0.2,
                        mtl >= 2,
                        process
