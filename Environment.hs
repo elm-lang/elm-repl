@@ -13,13 +13,10 @@ data Repl = Repl
     } deriving Show
 
 empty :: Repl
-empty = Repl Map.empty Map.empty Map.empty
+empty = Repl Map.empty Map.empty (Map.singleton "t_s_o_l_" "t_s_o_l_ = ()")
 
-expr :: BS.ByteString
-expr = BS.pack internalExpr
-
-internalExpr :: String
-internalExpr = "deltron3030"
+output :: BS.ByteString
+output = "deltron3030"
 
 toElm :: Repl -> String
 toElm env = unlines $ "module Repl where" : decls
@@ -32,26 +29,20 @@ insert str env
             getFirstCap (token@(c:_):rest) =
                 if isUpper c then token else getFirstCap rest
             getFirstCap _ = str
-        in  env { imports = Map.insert name str (imports env) }
+        in  noDisplay $ env { imports = Map.insert name str (imports env) }
 
     | isPrefixOf "data " str =
         let name = takeWhile (/=' ') (drop 5 str)
-        in  env { adts = Map.insert name str (adts env) }
+        in  noDisplay $ env { adts = Map.insert name str (adts env) }
             
     | otherwise =
         case break (=='=') str of
-          (_,"") -> addExpr str env
+          (_,"") -> display str env
           (beforeEquals, _:c:_)
-              | isSymbol c || hasLet beforeEquals -> addExpr str env
+              | isSymbol c || hasLet beforeEquals -> display str env
               | otherwise -> let name = declName beforeEquals
-                             in  add name str (addExpr name env)
-
+                             in  define name str (display name env)
         where
-          add name body env = env { defs = Map.insert name body (defs env) }
-          addExpr body = add internalExpr (format body)
-
-          format body = internalExpr ++ " =" ++ concatMap ("\n  "++) (lines body)
-
           declName pattern =
               case takeWhile isSymbol . dropWhile (not . isSymbol) $ pattern of
                 "" -> takeWhile (/=' ') pattern
@@ -61,3 +52,11 @@ insert str env
               where
                 isVarChar c = isAlpha c || isDigit c || elem c "_'"
                 token = takeWhile isVarChar . dropWhile (not . isAlpha)
+
+define name body env = env { defs = Map.insert name body (defs env) }
+display body = define output' (format body)
+    where format body = output' ++ " =" ++ concatMap ("\n  "++) (lines body)
+          output' = BS.unpack output
+
+noDisplay env = env { defs = Map.delete output' (defs env) }
+    where output' = BS.unpack output
