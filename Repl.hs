@@ -42,8 +42,14 @@ runRepl env =
   do writeFile tempElm (Env.toElm env)
      onSuccess compile $ \types -> do
        reformatJS tempJS
-       onSuccess run $ \value ->
-           BSC.putStrLn $ BS.concat [BS.init value, scrapeOutputType types]
+       onSuccess run $ \value' ->
+           let value = BSC.init value'
+               tipe = scrapeOutputType types
+               isTooLong = or [ BSC.isInfixOf "\n" value
+                              , BSC.isInfixOf "\n" tipe
+                              , BSC.length value + BSC.length tipe > 80 ]    
+               message = BS.concat [ if isTooLong then value' else value, tipe ]
+           in  BSC.putStrLn message
   where
     tempElm = "repl-temp-000.elm"
     tempJS  = "build" </> replaceExtension tempElm "js"
