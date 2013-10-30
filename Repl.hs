@@ -6,6 +6,7 @@ import System.Console.Haskeline
 import qualified Evaluator as Eval
 import qualified Environment as Env
 
+main :: IO ()
 main = runInputT defaultSettings (loop Env.empty)
 
 loop :: Env.Repl -> InputT IO ()
@@ -18,6 +19,7 @@ loop env = do
       success <- liftIO $ Eval.runRepl env'
       loop (if success then env' else env)
 
+getInput :: InputT IO String
 getInput = get "> " ""
     where
       get str old = do

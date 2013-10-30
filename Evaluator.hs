@@ -62,6 +62,7 @@ reformatJS tempJS =
           , "if (repl.", Env.output, ")\n"
           , "  console.log(context.Native.Show.values.show(repl.", Env.output, "));" ]
 
+scrapeOutputType :: BS.ByteString -> BS.ByteString
 scrapeOutputType types
     | name == Env.output = tipe
     | BS.null rest       = ""
