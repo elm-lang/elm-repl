@@ -42,6 +42,7 @@ insert str env
               | isSymbol c || hasLet beforeEquals -> display str env
               | otherwise -> let name = declName beforeEquals
                              in  define name str (display name env)
+          _ -> error "Environment.hs: Case error. Submit bug report."
         where
           declName pattern =
               case takeWhile isSymbol . dropWhile (not . isSymbol) $ pattern of
@@ -53,10 +54,14 @@ insert str env
                 isVarChar c = isAlpha c || isDigit c || elem c "_'"
                 token = takeWhile isVarChar . dropWhile (not . isAlpha)
 
+define :: String -> String -> Repl -> Repl
 define name body env = env { defs = Map.insert name body (defs env) }
-display body = define output' (format body)
+
+display :: String -> Repl -> Repl
+display = define output' . format
     where format body = output' ++ " =" ++ concatMap ("\n  "++) (lines body)
           output' = BS.unpack output
 
+noDisplay :: Repl -> Repl
 noDisplay env = env { defs = Map.delete output' (defs env) }
     where output' = BS.unpack output
