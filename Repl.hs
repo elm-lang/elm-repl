@@ -5,13 +5,20 @@ import Control.Monad.Trans
 import System.Console.Haskeline
 import qualified Evaluator as Eval
 import qualified Environment as Env
+import Control.Monad (unless)
 
 main :: IO ()
-main = runInputT defaultSettings (loop Env.empty)
+main = runInputT defaultSettings $ withInterrupt $ loop Env.empty
+
+handleCtrlC :: Env.Repl -> InputT IO ()
+handleCtrlC env@(Env.Repl _ _ _ wasCtrlC) = 
+  unless wasCtrlC $ liftIO (putStrLn "(Ctrl-C again to quit)") >> loop (env {Env.ctrlc = True})
+
 
 loop :: Env.Repl -> InputT IO ()
-loop env = do
+loop environment = handleInterrupt (handleCtrlC environment) $ do
   str <- getInput
+  let env = environment {Env.ctrlc = False}
   case str of
     "" -> loop env
     _  -> do

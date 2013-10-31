@@ -10,10 +10,11 @@ data Repl = Repl
     { imports :: Map.Map String String
     , adts :: Map.Map String String
     , defs :: Map.Map String String
+    , ctrlc :: Bool
     } deriving Show
 
 empty :: Repl
-empty = Repl Map.empty Map.empty (Map.singleton "t_s_o_l_" "t_s_o_l_ = ()")
+empty = Repl Map.empty Map.empty (Map.singleton "t_s_o_l_" "t_s_o_l_ = ()") False
 
 output :: BS.ByteString
 output = "deltron3030"
@@ -24,14 +25,14 @@ toElm env = unlines $ "module Repl where" : decls
 
 insert :: String -> Repl -> Repl
 insert str env
-    | isPrefixOf "import " str = 
+    | "import " `isPrefixOf`  str = 
         let name = getFirstCap (words str)
             getFirstCap (token@(c:_):rest) =
                 if isUpper c then token else getFirstCap rest
             getFirstCap _ = str
         in  noDisplay $ env { imports = Map.insert name str (imports env) }
 
-    | isPrefixOf "data " str =
+    | "data " `isPrefixOf` str =
         let name = takeWhile (/=' ') (drop 5 str)
         in  noDisplay $ env { adts = Map.insert name str (adts env) }
             
@@ -49,7 +50,7 @@ insert str env
                 "" -> takeWhile (/=' ') pattern
                 op -> op
 
-          hasLet = any (=="let") . map token . words
+          hasLet = elem "let" . map token . words
               where
                 isVarChar c = isAlpha c || isDigit c || elem c "_'"
                 token = takeWhile isVarChar . dropWhile (not . isAlpha)
