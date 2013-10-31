@@ -62,7 +62,7 @@ reformatJS tempJS =
     out = BS.concat
           [ "var context = { inputs:[] };\n"
           , "var repl = Elm.Repl.make(context);\n"
-          , "if (repl.", Env.output, ")\n"
+          , "if ('", Env.output, "' in repl)\n"
           , "  console.log(context.Native.Show.values.show(repl.", Env.output, "));" ]
 
 scrapeOutputType :: BS.ByteString -> BS.ByteString
