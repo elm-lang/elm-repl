@@ -80,7 +80,7 @@ scrapeOutputType types
             (line',rest'') = freshLine rest'
 
 removeIfExists :: FilePath -> IO ()
-removeIfExists fileName = removeFile fileName `catch` handleExists
+removeIfExists fileName = removeFile fileName `Control.Exception.catch` handleExists
   where handleExists e
           | isDoesNotExistError e = return ()
           | otherwise = throwIO e
