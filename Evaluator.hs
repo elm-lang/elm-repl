@@ -3,7 +3,6 @@ module Evaluator where
 
 import qualified Data.ByteString.Char8 as BSC
 import qualified Data.ByteString as BS
--- import qualified Data.Map as Map
 import qualified Language.Elm as Elm
 import qualified Environment as Env
 
@@ -13,41 +12,44 @@ import System.Exit      (ExitCode(..))
 import System.FilePath  ((</>), replaceExtension)
 import System.Process
 import Control.Exception
-
+import Control.Monad (unless)
 
 runRepl :: Env.Repl -> IO Bool
 runRepl environment =
   do writeFile tempElm (Env.toElm environment)
-     result <- onSuccess compile $ \types -> do
+     result <- run "elm" elmArgs $ \types -> do
        reformatJS tempJS
-       onSuccess run $ \value' ->
+       run "node" nodeArgs $ \value' ->
            let value = BSC.init value'
                tipe = scrapeOutputType types
-               isTooLong = or [ BSC.isInfixOf "\n" value
-                              , BSC.isInfixOf "\n" tipe
-                              , BSC.length value + BSC.length tipe > 80 ]    
+               isTooLong = BSC.isInfixOf "\n" value ||
+                           BSC.isInfixOf "\n" tipe ||
+                           BSC.length value + BSC.length tipe > 80   
                message = BS.concat [ if isTooLong then value' else value, tipe ]
-           in  if BSC.null value' then return () else BSC.putStrLn message
+           in  unless (BSC.null value') $ BSC.putStrLn message
      removeIfExists tempElm
      return result
   where
     tempElm = "repl-temp-000.elm"
     tempJS  = "build" </> replaceExtension tempElm "js"
     
-    run = (proc "node" [tempJS]) { std_out = CreatePipe }
-    compile = (proc "elm" args) { std_out = CreatePipe }
-        where args = [ "--make", "--only-js", "--print-types", tempElm ]
+    nodeArgs = [tempJS]
+    elmArgs  = ["--make", "--only-js", "--print-types", tempElm]
 
-    onSuccess action success =
-      let failure message = BSC.putStrLn message >> return False in
-      do (_, stdout, _, handle') <- createProcess action
+    run name args nextComputation =
+      let failure message = BSC.putStrLn message >> return False
+          missingExe = unlines [ "Error: '" ++ name ++ "' command not found."
+                               , "  Do you have it installed?"
+                               , "  Can it be run from anywhere? I.e. is it on your PATH?" ]
+      in
+      do (_, stdout, _, handle') <- createProcess (proc name args) { std_out = CreatePipe }
          exitCode <- waitForProcess handle'
          case (exitCode, stdout) of
-           (ExitFailure 127, _)      -> failure "Error: elm binary not found in your path."
+           (ExitFailure 127, _)      -> failure $ BSC.pack missingExe
            (_, Nothing)              -> failure "Unknown error!"
-           (ExitFailure _, Just out) -> failure =<< BS.hGetContents out
+           (ExitFailure _, Just out) -> failure =<< BSC.hGetContents out
            (ExitSuccess  , Just out) ->
-               do _ <- success =<< BS.hGetContents out
+               do nextComputation =<< BS.hGetContents out
                   return True
 
 reformatJS :: String -> IO ()
@@ -59,7 +61,7 @@ reformatJS tempJS =
     out = BS.concat
           [ "var context = { inputs:[] };\n"
           , "var repl = Elm.Repl.make(context);\n"
-          , "if (repl.", Env.output, ")\n"
+          , "if ('", Env.output, "' in repl)\n"
           , "  console.log(context.Native.Show.values.show(repl.", Env.output, "));" ]
 
 scrapeOutputType :: BS.ByteString -> BS.ByteString
