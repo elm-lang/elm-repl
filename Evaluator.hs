@@ -18,9 +18,9 @@ import Control.Exception
 runRepl :: Env.Repl -> IO Bool
 runRepl env =
   do writeFile tempElm (Env.toElm env)
-     result <- onSuccess compile $ \types -> do
+     result <- run "elm" elmArgs $ \types -> do
        reformatJS tempJS
-       onSuccess run $ \value' ->
+       run "node" nodeArgs $ \value' ->
            let value = BSC.init value'
                tipe = scrapeOutputType types
                isTooLong = or [ BSC.isInfixOf "\n" value
@@ -34,20 +34,23 @@ runRepl env =
     tempElm = "repl-temp-000.elm"
     tempJS  = "build" </> replaceExtension tempElm "js"
     
-    run = (proc "node" [tempJS]) { std_out = CreatePipe }
-    compile = (proc "elm" args) { std_out = CreatePipe }
-        where args = [ "--make", "--only-js", "--print-types", tempElm ]
+    nodeArgs = [tempJS]
+    elmArgs  = ["--make", "--only-js", "--print-types", tempElm]
 
-    onSuccess action success =
-      let failure message = BSC.putStrLn message >> return False in
-      do (_, stdout, _, handle) <- createProcess action
+    run name args nextComputation =
+      let failure message = BSC.putStrLn message >> return False
+          missingExe = unlines [ "Error: '" ++ name ++ "' command not found."
+                               , "  Do you have it installed?"
+                               , "  Can it be run from anywhere? I.e. is it on your PATH?" ]
+      in
+      do (_, stdout, _, handle) <- createProcess (proc name args) { std_out = CreatePipe }
          exitCode <- waitForProcess handle
          case (exitCode, stdout) of
-           (ExitFailure 127, _)      -> failure "Error: elm binary not found in your path."
+           (ExitFailure 127, _)      -> failure $ BSC.pack missingExe
            (_, Nothing)              -> failure "Unknown error!"
-           (ExitFailure _, Just out) -> failure =<< BS.hGetContents out
+           (ExitFailure _, Just out) -> failure =<< BSC.hGetContents out
            (ExitSuccess  , Just out) ->
-               do success =<< BS.hGetContents out
+               do nextComputation =<< BS.hGetContents out
                   return True
 
 reformatJS :: String -> IO ()
@@ -59,7 +62,7 @@ reformatJS tempJS =
     out = BS.concat
           [ "var context = { inputs:[] };\n"
           , "var repl = Elm.Repl.make(context);\n"
-          , "if (repl.", Env.output, ")\n"
+          , "if ('", Env.output, "' in repl)\n"
           , "  console.log(context.Native.Show.values.show(repl.", Env.output, "));" ]
 
 scrapeOutputType :: BS.ByteString -> BS.ByteString
