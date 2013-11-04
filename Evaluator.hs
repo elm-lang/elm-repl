@@ -3,7 +3,6 @@ module Evaluator where
 
 import qualified Data.ByteString.Char8 as BSC
 import qualified Data.ByteString as BS
-import qualified Data.Map as Map
 import qualified Language.Elm as Elm
 import qualified Environment as Env
 
@@ -13,21 +12,21 @@ import System.Exit      (ExitCode(..))
 import System.FilePath  ((</>), replaceExtension)
 import System.Process
 import Control.Exception
-
+import Control.Monad (unless)
 
 runRepl :: Env.Repl -> IO Bool
-runRepl env =
-  do writeFile tempElm (Env.toElm env)
+runRepl environment =
+  do writeFile tempElm (Env.toElm environment)
      result <- run "elm" elmArgs $ \types -> do
        reformatJS tempJS
        run "node" nodeArgs $ \value' ->
            let value = BSC.init value'
                tipe = scrapeOutputType types
-               isTooLong = or [ BSC.isInfixOf "\n" value
-                              , BSC.isInfixOf "\n" tipe
-                              , BSC.length value + BSC.length tipe > 80 ]    
+               isTooLong = BSC.isInfixOf "\n" value ||
+                           BSC.isInfixOf "\n" tipe ||
+                           BSC.length value + BSC.length tipe > 80   
                message = BS.concat [ if isTooLong then value' else value, tipe ]
-           in  if BSC.null value' then return () else BSC.putStrLn message
+           in  unless (BSC.null value') $ BSC.putStrLn message
      removeIfExists tempElm
      return result
   where
@@ -43,8 +42,8 @@ runRepl env =
                                , "  Do you have it installed?"
                                , "  Can it be run from anywhere? I.e. is it on your PATH?" ]
       in
-      do (_, stdout, _, handle) <- createProcess (proc name args) { std_out = CreatePipe }
-         exitCode <- waitForProcess handle
+      do (_, stdout, _, handle') <- createProcess (proc name args) { std_out = CreatePipe }
+         exitCode <- waitForProcess handle'
          case (exitCode, stdout) of
            (ExitFailure 127, _)      -> failure $ BSC.pack missingExe
            (_, Nothing)              -> failure "Unknown error!"
@@ -75,15 +74,15 @@ scrapeOutputType types
       (name,tipe) = BSC.splitAt (BSC.length Env.output) next
 
       freshLine str
-          | BSC.take 2 rest == "\n " = (BS.append line line', rest')
-          | BS.null rest = (line,"")
-          | otherwise    = (line, BS.tail rest)
+          | BSC.take 2 rest' == "\n " = (BS.append line line', rest'')
+          | BS.null rest' = (line,"")
+          | otherwise    = (line, BS.tail rest')
           where
-            (line,rest) = BSC.break (=='\n') str
-            (line',rest') = freshLine rest
+            (line,rest') = BSC.break (=='\n') str
+            (line',rest'') = freshLine rest'
 
 removeIfExists :: FilePath -> IO ()
-removeIfExists fileName = removeFile fileName `catch` handleExists
+removeIfExists fileName = removeFile fileName `Control.Exception.catch` handleExists
   where handleExists e
           | isDoesNotExistError e = return ()
           | otherwise = throwIO e

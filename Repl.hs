@@ -5,29 +5,35 @@ import Control.Monad.Trans
 import System.Console.Haskeline
 import qualified Evaluator as Eval
 import qualified Environment as Env
+import System.Exit
 
 main :: IO ()
-main = runInputT defaultSettings (loop Env.empty)
+main = runInputT defaultSettings $ withInterrupt $ loop Env.empty
 
 loop :: Env.Repl -> InputT IO ()
-loop env = do
-  str <- getInput
-  case str of
-    "" -> loop env
-    _  -> do
+loop environment@(Env.Repl _ _ _ wasCtrlC) = do
+  str' <- handleInterrupt (return Nothing) getInput
+  let env = environment {Env.ctrlc = False}
+  case str' of
+    Nothing -> if wasCtrlC then lift $ exitWith (ExitFailure 130)
+                          else do 
+                            lift $ putStrLn "(Ctrl-C again to exit)"
+                            loop $ environment {Env.ctrlc = True}
+    Just "" -> loop env
+    Just str  -> do
       let env' = Env.insert str env
       success <- liftIO $ Eval.runRepl env'
       loop (if success then env' else env)
 
-getInput :: InputT IO String
+getInput :: InputT IO (Maybe String)
 getInput = get "> " ""
     where
       get str old = do
         input <- getInputLine str
         case input of
-          Nothing  -> return old
+          Nothing  -> return $ Just old
           Just new -> continueWith (old ++ new)
 
       continueWith str
-        | null str || last str /= '\\' = return str
+        | null str || last str /= '\\' = return $ Just str
         | otherwise = get "| " (init str ++ "\n")

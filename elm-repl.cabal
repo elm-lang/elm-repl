@@ -1,5 +1,5 @@
 Name:                elm-repl
-Version:             0.1
+Version:             0.1.0.1
 Synopsis:            a REPL for Elm
 Description:         A REPL for evaluating Elm expressions
 
