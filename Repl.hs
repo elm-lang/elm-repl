@@ -16,6 +16,7 @@ data Command
  | ListSrc
  | ClearSrc
  | Quit
+ | Reset
    deriving Show
 
 main :: IO ()
@@ -60,18 +61,22 @@ runCommand env command =
     Right command -> do
       let (env', sideEffects) = 
             case command of
-              AddSrc path -> (env { Env.src_dirs = Set.insert path (Env.src_dirs env) }, return ())
-              RemoveSrc path -> (env { Env.src_dirs = Set.delete path (Env.src_dirs env) }, return ())
-              ClearSrc -> (env { Env.src_dirs = Set.empty }, return ())
+              AddSrc path -> (env { Env.src_dirs = Set.insert path (Env.src_dirs env) }, none)
+              RemoveSrc path -> (env { Env.src_dirs = Set.delete path (Env.src_dirs env) }, none)
+              ClearSrc -> (env { Env.src_dirs = Set.empty }, none)
               ListSrc -> (env, mapM_ putStrLn . Set.toList $ (Env.src_dirs env))
               Quit -> (env, exitSuccess)
+              Reset -> (Env.empty, none)
       lift $ sideEffects
       loop env'
+
+none = return ()
 
 parseCommand :: String -> Either ParseError Command
 parseCommand str = parse commands "" str
 
-commands = try addSrc <|> removeSrc <|> listSrc <|> clearSrc <|> quit
+commands = (try addSrc <|> listSrc) <|>
+           (try removeSrc <|> reset) <|> listSrc <|> clearSrc <|> quit
 
 addSrc = do
   _ <- string "src-dir="
@@ -83,20 +88,16 @@ removeSrc = do
   path <- manyTill anyChar eof
   return (RemoveSrc path)
   
-listSrc = do
-  _ <- string "src-dir"
-  _ <- spaces
-  _ <- eof
-  return ListSrc
+listSrc = basicCommand "src-dir" ListSrc
   
-clearSrc = do
-  _ <- string "clear-src-dir"
-  _ <- spaces
-  _ <- eof
-  return ClearSrc
+clearSrc = basicCommand "clear-src-dir" ClearSrc
   
-quit = do
-  _ <- string "quit"
+quit = basicCommand "quit" Quit
+  
+reset = basicCommand "reset" Reset
+  
+basicCommand c const = do
+  _ <- string c
   _ <- spaces
   _ <- eof
-  return Quit
+  return const
