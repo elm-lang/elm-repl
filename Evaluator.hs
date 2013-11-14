@@ -5,6 +5,8 @@ import qualified Data.ByteString.Char8 as BSC
 import qualified Data.ByteString as BS
 import qualified Language.Elm as Elm
 import qualified Environment as Env
+import qualified Data.Set as Set
+import Data.List
 
 import System.IO.Error  (isDoesNotExistError)
 import System.Directory (removeFile)
@@ -34,7 +36,7 @@ runRepl environment =
     tempJS  = "build" </> replaceExtension tempElm "js"
     
     nodeArgs = [tempJS]
-    elmArgs  = ["--make", "--only-js", "--print-types", tempElm]
+    elmArgs  = (getSrcs environment) ++ ["--make", "--only-js", "--print-types", tempElm]
 
     run name args nextComputation =
       let failure message = BSC.putStrLn message >> return False
@@ -86,3 +88,8 @@ removeIfExists fileName = removeFile fileName `Control.Exception.catch` handleEx
   where handleExists e
           | isDoesNotExistError e = return ()
           | otherwise = throwIO e
+                        
+getSrcs :: Env.Repl -> [String]
+getSrcs env = map ("--src-dir=" ++ ) . Set.toList . Env.src_dirs $ env
+  
+  
