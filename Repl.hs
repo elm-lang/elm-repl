@@ -15,6 +15,7 @@ data Command
  | RemoveSrc String
  | ListSrc
  | ClearSrc
+ | Quit
    deriving Show
 
 main :: IO ()
@@ -63,13 +64,14 @@ runCommand env command =
               RemoveSrc path -> (env { Env.src_dirs = Set.delete path (Env.src_dirs env) }, return ())
               ClearSrc -> (env { Env.src_dirs = Set.empty }, return ())
               ListSrc -> (env, mapM_ putStrLn . Set.toList $ (Env.src_dirs env))
+              Quit -> (env, exitSuccess)
       lift $ sideEffects
       loop env'
 
 parseCommand :: String -> Either ParseError Command
 parseCommand str = parse commands "" str
 
-commands = try addSrc <|> removeSrc <|> listSrc <|> clearSrc
+commands = try addSrc <|> removeSrc <|> listSrc <|> clearSrc <|> quit
 
 addSrc = do
   _ <- string "src-dir="
@@ -92,3 +94,9 @@ clearSrc = do
   _ <- spaces
   _ <- eof
   return ClearSrc
+  
+quit = do
+  _ <- string "quit"
+  _ <- spaces
+  _ <- eof
+  return Quit
