@@ -75,7 +75,9 @@ reformatJS input tempJS =
           , "  process.stderr.write(msg);\n"
           , "  process.exit(1);\n"
           , "});\n"
-          , "var context = { inputs:[] };\n"
+          , "var document = document || {};"
+          , "var window = window || {};"
+          , "var context = { inputs:[], addListener:function(){}, node:{} };\n"
           , "var repl = Elm.Repl.make(context);\n"
           , "if ('", Env.output, "' in repl)\n"
           , "  console.log(context.Native.Show.values.show(repl.", Env.output, "));" ]
