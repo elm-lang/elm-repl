@@ -13,17 +13,15 @@ main = runInputT defaultSettings $ withInterrupt $ loop Env.empty
 loop :: Env.Repl -> InputT IO ()
 loop environment@(Env.Repl _ _ _ wasCtrlC) = do
   str' <- handleInterrupt (return Nothing) getInput
-  let env = environment {Env.ctrlc = False}
   case str' of
-    Nothing -> if wasCtrlC then lift $ exitWith (ExitFailure 130)
-                          else do 
-                            lift $ putStrLn "(Ctrl-C again to exit)"
-                            loop $ environment {Env.ctrlc = True}
-    Just "" -> loop env
-    Just str  -> do
-      let env' = Env.insert str env
-      success <- liftIO $ Eval.runRepl env'
-      loop (if success then env' else env)
+    Just input ->
+        loop =<< liftIO (Eval.runRepl input $ environment {Env.ctrlc = False})
+
+    Nothing
+        | wasCtrlC  -> lift $ exitWith (ExitFailure 130)
+        | otherwise -> do 
+              lift $ putStrLn "(Ctrl-C again to exit)"
+              loop $ environment {Env.ctrlc = True}
 
 getInput :: InputT IO (Maybe String)
 getInput = get "> " ""
