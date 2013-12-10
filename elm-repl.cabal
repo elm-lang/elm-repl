@@ -34,7 +34,7 @@ Executable elm-repl
                        bytestring,
                        containers >= 0.3,
                        directory,
-                       Elm >= 0.10,
+                       Elm >= 0.10.0.2,
                        filepath,
                        haskeline,
                        transformers >= 0.2,
