@@ -1,9 +1,12 @@
 Name:                elm-repl
-Version:             0.1.0.1
+Version:             0.1
 Synopsis:            a REPL for Elm
-Description:         A REPL for evaluating Elm expressions
+Description:         A read-eval-print-loop (REPL) for evaluating Elm expressions,
+                     definitions, ADTs, and module imports. This tool is meant to
+                     help you play with small expressions and interact with
+                     functions deep inside of larger projects.
 
-Homepage:            http://elm-lang.org
+Homepage:            https://github.com/evancz/elm-repl#elm-repl
 
 License:             BSD3
 License-file:        LICENSE
@@ -12,7 +15,7 @@ Author:              Evan Czaplicki
 Maintainer:          info@elm-lang.org
 Copyright:           Copyright: (c) 2011-2013 Evan Czaplicki
 
-Category:            Compiler, Language
+Category:            Tool
 
 Build-type:          Simple
 
@@ -20,10 +23,13 @@ Cabal-version:       >=1.8
 
 source-repository head
   type:     git
-  location: git://github.com/evancz/Elm.git
+  location: git://github.com/evancz/elm-repl.git
 
 Executable elm-repl
   Main-is:             Repl.hs
+  other-modules:       Environment,
+                       Evaluator
+
   Build-depends:       base >=4.2 && <5,
                        bytestring,
                        containers >= 0.3,
