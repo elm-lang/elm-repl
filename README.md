@@ -67,3 +67,43 @@ reachable from the directory where `elm-repl` is running:
 > String.reverse "flow"
 "wolf" : String
 ```
+
+You can add source directories to search that are not located
+within the current running directory
+
+```
+> :src-dir=/path/to/lib/
+```
+
+You can list the current directories to be searched outside
+of the current running directory
+
+```
+> :src-dir=/path/to/lib/
+> :src-dir=/another/path/to/lib/
+> :src-dir
+/path/to/lib
+/another/path/to/lib
+```
+
+You can clear the current directories to be searched outside
+of the current running directory
+```
+> :clear-src-dir
+> :src-dir
+```
+
+You can remove a single directory to be searched outside of
+the current running directory
+
+```
+> :src-dir=/path/to/lib/
+> :src-dir=/another/path/to/lib/
+> :src-dir
+/path/to/lib
+/another/path/to/lib
+> :remove-src-dir=/path/to/lib
+>:src-dir
+/another/path/to/lib
+```
+

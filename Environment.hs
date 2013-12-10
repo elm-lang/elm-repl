@@ -4,6 +4,7 @@ module Environment where
 import qualified Data.ByteString.Char8 as BS
 import Data.Char
 import Data.List
+import qualified Data.Set as Set
 import qualified Data.Map as Map
 
 data Repl = Repl
@@ -11,10 +12,11 @@ data Repl = Repl
     , adts :: Map.Map String String
     , defs :: Map.Map String String
     , ctrlc :: Bool
+    , src_dirs :: Set.Set String
     } deriving Show
 
 empty :: Repl
-empty = Repl Map.empty Map.empty (Map.singleton "t_s_o_l_" "t_s_o_l_ = ()") False
+empty = Repl Map.empty Map.empty (Map.singleton "t_s_o_l_" "t_s_o_l_ = ()") False Set.empty
 
 output :: BS.ByteString
 output = "deltron3030"
