@@ -4,9 +4,15 @@ This tool lets you interact with values and functions directly.
 
 ### Install
 
-Install [Elm](https://github.com/evancz/Elm/blob/master/README.md#install)
-and [node.js](http://nodejs.org/download/). Then run `cabal install`
-in the root directory of this project.
+Install [node.js](http://nodejs.org/download/) and then run:
+
+```bash
+cabal update
+cabal install elm-repl
+```
+
+This package depends on the latest release of the Elm compiler, so
+it will install that automatically.
 
 ### Use
 
