@@ -70,9 +70,7 @@ reformatJS input tempJS =
   where
     out = BS.concat
           [ "process.on('uncaughtException', function(err) {\n"
-          , "  var input = '", BSC.pack input, "';\n"
-          , "  var msg = (input.slice(0,7) === 'import ') ? ", badImport, " : ('Runtime error: ' + err);\n"
-          , "  process.stderr.write(msg);\n"
+          , "  process.stderr.write(err);\n"
           , "  process.exit(1);\n"
           , "});\n"
           , "var document = document || {};"
@@ -81,9 +79,6 @@ reformatJS input tempJS =
           , "var repl = Elm.Repl.make(context);\n"
           , "if ('", Env.output, "' in repl)\n"
           , "  console.log(context.Native.Show.values.show(repl.", Env.output, "));" ]
-
-    badImport = "('Error: unable to import \\\"' + input.slice(7).replace(/ /g,'') + '\\\".\\nIt may rely on a browser API that is unavailable on the command line.')"
-
 
 scrapeOutputType :: BS.ByteString -> BS.ByteString
 scrapeOutputType types
