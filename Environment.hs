@@ -6,15 +6,30 @@ import Data.Char
 import Data.List
 import qualified Data.Map as Map
 
+type FlagKey = Int
+
+-- Flag (Property, Value)
+type Flag = (String, String)
+
+
 data Repl = Repl
     { imports :: Map.Map String String
     , adts :: Map.Map String String
     , defs :: Map.Map String String
     , ctrlc :: Bool
+    , flags :: Map.Map FlagKey Flag
     } deriving Show
 
+nextKey :: Repl -> FlagKey
+nextKey repl
+  | flags repl == Map.empty = 0
+  | otherwise = (+1) . fst . Map.findMax . flags $ repl
+
+formatFlag :: (FlagKey, Flag) -> String
+formatFlag (k, (p, v)) = (show k) ++ ": " ++ p ++ "=" ++ v
+
 empty :: Repl
-empty = Repl Map.empty Map.empty (Map.singleton "t_s_o_l_" "t_s_o_l_ = ()") False
+empty = Repl Map.empty Map.empty (Map.singleton "t_s_o_l_" "t_s_o_l_ = ()") False Map.empty
 
 output :: BS.ByteString
 output = "deltron3030"

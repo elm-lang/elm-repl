@@ -5,6 +5,8 @@ import qualified Data.ByteString.Char8 as BSC
 import qualified Data.ByteString as BS
 import qualified Language.Elm as Elm
 import qualified Environment as Env
+import qualified Data.Map as Map
+import Data.List
 
 import System.IO
 import System.IO.Error  (isDoesNotExistError)
@@ -39,7 +41,7 @@ runRepl input oldEnv =
     tempJS  = "build" </> replaceExtension tempElm "js"
     
     nodeArgs = [tempJS]
-    elmArgs  = ["--make", "--only-js", "--print-types", tempElm]
+    elmArgs  = (getSrcs newEnv) ++ ["--make", "--only-js", "--print-types", tempElm]
 
     run name args nextComputation =
       do (_, stdout, stderr, handle') <-
@@ -102,3 +104,9 @@ removeIfExists fileName = removeFile fileName `Control.Exception.catch` handleEx
   where handleExists e
           | isDoesNotExistError e = return ()
           | otherwise = throwIO e
+                        
+getSrcs :: Env.Repl -> [String]
+getSrcs env = map (getFlag . snd) . Map.toList . Env.flags $ env
+
+getFlag :: Env.Flag -> String
+getFlag (p, v) = "--" ++ p ++ "=" ++ v

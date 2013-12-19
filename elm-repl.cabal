@@ -39,4 +39,5 @@ Executable elm-repl
                        haskeline,
                        transformers >= 0.2,
                        mtl >= 2,
-                       process
+                       process,
+                       parsec >= 3.0
