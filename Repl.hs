@@ -152,7 +152,28 @@ flagsInfo = "Usage: flags [operation]\n\n" ++
             "    add [property][=value]\tAdds a flag with the specified property.\n" ++
             "    remove flag-id\t\tRemoves a flag by its id.\n" ++
             "    list\t\t\tLists all flags and their ids.\n" ++
-            "    clear\t\t\tClears all flags.\n"
+            "    clear\t\t\tClears all flags.\n\n" ++
+            "  properties:\n" ++
+            "    src-dir\t\t\tAdds a source directory to be searched during evaluation.\n\n" ++
+            "  examples:\n" ++
+            "    Add \"some/dir\" to the path of searched directories\n" ++
+            "    > :flags add src-dir=some/dir\n" ++
+            "    0: src-dir=some/dir\n\n" ++
+            "    Add \"another/dir\" to the path of searched directories\n" ++
+            "    > :flags add src-dir=another/dir\n" ++
+            "    1: src-dir=another/dir\n\n" ++
+            "    List all set flags:\n" ++
+            "    > :flags list\n" ++
+            "    0: src-dir=some/dir\n" ++
+            "    1: src-dir=another/dir\n\n" ++
+            "    Remove \"some/dir\" from the path of searched directores\n" ++
+            "    > :flags remove 0\n" ++
+            "    0: src-dir=some/dir\n\n" ++
+            "    Clear all flags\n" ++
+            "    > :flags clear\n" ++
+            "    All flags cleared"
+            
+            
             
 helpInfo = "Commands available from the prompt:\n\n" ++
            "  <statement>\t\tevaluate <statement>\n" ++
