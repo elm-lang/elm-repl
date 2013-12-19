@@ -21,7 +21,7 @@ runRepl :: String -> Env.Repl -> IO Env.Repl
 runRepl "" env = return env
 runRepl input oldEnv =
   do writeFile tempElm $ Env.toElm newEnv
-     success <- run "elm" elmArgs $ \types -> do
+     success <- run (Env.compilerPath newEnv) elmArgs $ \types -> do
        reformatJS input tempJS
        run "node" nodeArgs $ \value' ->
            let value = BSC.init value'

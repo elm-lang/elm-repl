@@ -13,7 +13,8 @@ type Flag = (String, String)
 
 
 data Repl = Repl
-    { imports :: Map.Map String String
+    { compilerPath :: FilePath
+    , imports :: Map.Map String String
     , adts :: Map.Map String String
     , defs :: Map.Map String String
     , ctrlc :: Bool
@@ -28,8 +29,8 @@ nextKey repl
 formatFlag :: (FlagKey, Flag) -> String
 formatFlag (k, (p, v)) = (show k) ++ ": " ++ p ++ "=" ++ v
 
-empty :: Repl
-empty = Repl Map.empty Map.empty (Map.singleton "t_s_o_l_" "t_s_o_l_ = ()") False Map.empty
+empty :: FilePath -> Repl
+empty compilerPath = Repl compilerPath Map.empty Map.empty (Map.singleton "t_s_o_l_" "t_s_o_l_ = ()") False Map.empty
 
 output :: BS.ByteString
 output = "deltron3030"

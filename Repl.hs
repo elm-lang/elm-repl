@@ -6,6 +6,7 @@ import Control.Monad.Trans
 import System.Console.Haskeline
 import qualified Evaluator as Eval
 import qualified Environment as Env
+import System.Environment
 import System.Directory
 import System.Exit
 
@@ -21,21 +22,61 @@ data Command
  | Help
  | Quit
  | Reset
+ | SetCompiler FilePath
 
-welcomeMessage = "elm-repl, version 0.1.0.1: https://github.com/evancz/elm-repl  type :help for help"
+version = "elm-repl, version 0.1.0.1: https://github.com/evancz/elm-repl"
+
+welcomeMessage = version ++ "   type :help for help"
+
+displayHelp = putStrLn $ 
+              version ++ "\n\n" ++
+              "Usage: elm-repl [OPTIONS]\n\n" ++
+              "Flags:\n" ++
+              "  --compiler=PATH\tSpecify the compiler to use when evaluating statements.\n" ++
+              "  --help\t\tDisplay help message."
 
 main :: IO ()
 main = do
-  buildExisted <- doesDirectoryExist "build"
-  cacheExisted <- doesDirectoryExist "cache"
-  putStrLn welcomeMessage
-  exitCode <- runInputT defaultSettings $ withInterrupt $ loop Env.empty
-  when (not buildExisted) (removeDirectoryRecursive "build")
-  when (not cacheExisted) (removeDirectoryRecursive "cache")
-  exitWith exitCode
+  helpFlag <- getArgs >>= return . getHelpFlag
+  case helpFlag of
+    True -> displayHelp
+    _ -> do
+      buildExisted <- doesDirectoryExist "build"
+      cacheExisted <- doesDirectoryExist "cache"
+      compilerPath <- getArgs >>= return . getCompilerPath
+      putStrLn welcomeMessage
+      exitCode <- runInputT defaultSettings $ withInterrupt $ loop (Env.empty compilerPath)
+      when (not buildExisted) (removeDirectoryRecursive "build")
+      when (not cacheExisted) (removeDirectoryRecursive "cache")
+      exitWith exitCode
+
+getHelpFlag :: [String] -> Bool
+getHelpFlag [] = False
+getHelpFlag (x:xs) =
+  let parsed = parse helpFlag "" x in
+  case parsed of
+    Left _ -> getHelpFlag xs
+    Right _ -> True
+    
+helpFlag = do
+  _ <- string "--help"
+  return True
+
+getCompilerPath :: [String] -> FilePath
+getCompilerPath [] = "elm"
+getCompilerPath (x:xs) = 
+  let parsed = parse compilerPath "" x in
+  case parsed of
+    Left _ -> getCompilerPath xs
+    Right path -> path
+
+compilerPath = do
+  _ <- string "--compiler="
+  path <- manyTill anyChar endOfInput
+  return path
 
 loop :: Env.Repl -> InputT IO ExitCode
-loop environment@(Env.Repl _ _ _ wasCtrlC _) = do
+loop environment@(Env.Repl _ _ _ _ wasCtrlC _) = do
   str' <- handleInterrupt (return Nothing) getInput
   case str' of
     Just (':':command) -> runCommand environment command
@@ -83,8 +124,9 @@ runCommand env command =
               ClearFlags -> (env {Env.flags = Map.empty}, putStrLn "All flags cleared")
               InfoFlags -> (env, putStrLn flagsInfo)
               Quit -> (env, exitSuccess)
-              Reset -> (Env.empty, none)
+              Reset -> (Env.empty $ Env.compilerPath env, none)
               Help -> (env, putStrLn helpInfo)
+              SetCompiler path -> (env {Env.compilerPath = path}, putStrLn "Compiler Path set.")
       lift $ sideEffects
       loop env'
 
@@ -101,12 +143,17 @@ flags = do
   p <- flagoperation
   return p
 
-flagoperation = addflag <|> removeflag <|> listflags <|> clearflags <|> infoflags
+flagoperation = setCompiler <|> addflag <|> removeflag <|> listflags <|> clearflags <|> infoflags
 
 infoflags = return InfoFlags
 
+setCompiler = do
+  _ <- string "set compiler="
+  path <- manyTill anyChar endOfInput
+  return (SetCompiler path)
+
 addflag = do
-  _ <- string "add"
+  _ <- string "set"
   _ <- many1 space
   property
 
@@ -149,18 +196,20 @@ basicCommand c const = do
   
 flagsInfo = "Usage: flags [operation]\n\n" ++
             "  operations:\n" ++
-            "    add [property][=value]\tAdds a flag with the specified property.\n" ++
+            "    set [property][=value]\tSets a flag with the specified property.\n" ++
             "    remove flag-id\t\tRemoves a flag by its id.\n" ++
             "    list\t\t\tLists all flags and their ids.\n" ++
             "    clear\t\t\tClears all flags.\n\n" ++
             "  properties:\n" ++
-            "    src-dir\t\t\tAdds a source directory to be searched during evaluation.\n\n" ++
+            "    compiler\t\t\tSets the compiler to use when evaluation statements.\n" ++
+            "    src-dir\t\t\tAdds a source directory to be searched during evaluation." 
+{-            
             "  examples:\n" ++
             "    Add \"some/dir\" to the path of searched directories\n" ++
-            "    > :flags add src-dir=some/dir\n" ++
+            "    > :flags set src-dir=some/dir\n" ++
             "    0: src-dir=some/dir\n\n" ++
             "    Add \"another/dir\" to the path of searched directories\n" ++
-            "    > :flags add src-dir=another/dir\n" ++
+            "    > :flags set src-dir=another/dir\n" ++
             "    1: src-dir=another/dir\n\n" ++
             "    List all set flags:\n" ++
             "    > :flags list\n" ++
@@ -172,9 +221,8 @@ flagsInfo = "Usage: flags [operation]\n\n" ++
             "    Clear all flags\n" ++
             "    > :flags clear\n" ++
             "    All flags cleared"
-            
-            
-            
+-}            
+
 helpInfo = "Commands available from the prompt:\n\n" ++
            "  <statement>\t\tevaluate <statement>\n" ++
            "  :flags\t\tManipulate flags sent to elm compiler\n" ++
