@@ -172,7 +172,7 @@ eof' = eof >> return ' '
 property = srcdir
 
 srcdir = do
-  _ <- string "src-dir="
+  _ <- string "--src-dir="
   v <- manyTill anyChar endOfInput
   return (AddFlag ("src-dir", v))
   
@@ -190,7 +190,7 @@ basicCommand c const = do
   
 flagsInfo = "Usage: flags [operation]\n\n" ++
             "  operations:\n" ++
-            "    add [property][=value]\tSets a flag with the specified property.\n" ++
+            "    add --property=value\tSets a flag with the specified property.\n" ++
             "    remove flag-id\t\tRemoves a flag by its id.\n" ++
             "    list\t\t\tLists all flags and their ids.\n" ++
             "    clear\t\t\tClears all flags.\n\n" ++
