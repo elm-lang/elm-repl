@@ -22,7 +22,6 @@ data Command
  | Help
  | Quit
  | Reset
- | SetCompiler FilePath
 
 version = "elm-repl, version 0.1.0.1: https://github.com/evancz/elm-repl"
 
@@ -126,7 +125,6 @@ runCommand env command =
               Quit -> (env, exitSuccess)
               Reset -> (Env.empty $ Env.compilerPath env, none)
               Help -> (env, putStrLn helpInfo)
-              SetCompiler path -> (env {Env.compilerPath = path}, putStrLn "Compiler Path set.")
       lift $ sideEffects
       loop env'
 
@@ -143,17 +141,13 @@ flags = do
   p <- flagoperation
   return p
 
-flagoperation = setCompiler <|> addflag <|> removeflag <|> listflags <|> clearflags <|> infoflags
+flagoperation = addflag <|> removeflag <|> listflags <|> clearflags <|> infoflags
 
 infoflags = return InfoFlags
 
-setCompiler = do
-  _ <- string "set compiler="
-  path <- manyTill anyChar endOfInput
-  return (SetCompiler path)
 
 addflag = do
-  _ <- string "set"
+  _ <- string "add"
   _ <- many1 space
   property
 
@@ -196,12 +190,11 @@ basicCommand c const = do
   
 flagsInfo = "Usage: flags [operation]\n\n" ++
             "  operations:\n" ++
-            "    set [property][=value]\tSets a flag with the specified property.\n" ++
+            "    add [property][=value]\tSets a flag with the specified property.\n" ++
             "    remove flag-id\t\tRemoves a flag by its id.\n" ++
             "    list\t\t\tLists all flags and their ids.\n" ++
             "    clear\t\t\tClears all flags.\n\n" ++
             "  properties:\n" ++
-            "    compiler\t\t\tSets the compiler to use when evaluation statements.\n" ++
             "    src-dir\t\t\tAdds a source directory to be searched during evaluation." 
 {-            
             "  examples:\n" ++
