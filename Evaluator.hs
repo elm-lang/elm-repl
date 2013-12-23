@@ -91,13 +91,11 @@ scrapeOutputType types
       (next,rest) = freshLine types
       (name,tipe) = BSC.splitAt (BSC.length Env.output) next
 
-      freshLine str
-          | BSC.take 2 rest' == "\n " = (BS.append line line', rest'')
-          | BS.null rest' = (line,"")
-          | otherwise    = (line, BS.tail rest')
-          where
-            (line,rest') = BSC.break (=='\n') str
-            (line',rest'') = freshLine rest'
+freshLine :: BS.ByteString -> (BS.ByteString, BS.ByteString)
+freshLine str | BS.null rest' = (line,"")
+              | otherwise     = (line, BS.tail rest')
+  where
+    (line,rest') = BSC.break (=='\n') str
 
 removeIfExists :: FilePath -> IO ()
 removeIfExists fileName = removeFile fileName `Control.Exception.catch` handleExists
