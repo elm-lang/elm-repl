@@ -19,6 +19,7 @@ data Repl = Repl
     , defs :: Map.Map String String
     , ctrlc :: Bool
     , flags :: Map.Map FlagKey Flag
+    , rootDirectory :: Maybe FilePath
     } deriving Show
 
 nextKey :: Repl -> FlagKey
@@ -30,7 +31,10 @@ formatFlag :: (FlagKey, Flag) -> String
 formatFlag (k, (p, v)) = (show k) ++ ": " ++ p ++ "=" ++ v
 
 empty :: FilePath -> Repl
-empty compilerPath = Repl compilerPath Map.empty Map.empty (Map.singleton "t_s_o_l_" "t_s_o_l_ = ()") False Map.empty
+empty compilerPath = Repl compilerPath Map.empty Map.empty (Map.singleton "t_s_o_l_" "t_s_o_l_ = ()") False Map.empty Nothing
+
+reset :: FilePath -> Maybe FilePath -> Repl
+reset compilerPath workingDirectory = Repl compilerPath Map.empty Map.empty (Map.singleton "t_s_o_l_" "t_s_o_l_ = ()") False Map.empty workingDirectory
 
 output :: BS.ByteString
 output = "deltron3030"

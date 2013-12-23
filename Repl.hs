@@ -22,8 +22,10 @@ data Command
  | Help
  | Quit
  | Reset
+ | ChangeRootDirectory String
+   deriving Show
 
-version = "elm-repl, version 0.1.0.1: https://github.com/evancz/elm-repl"
+version = "elm-repl, version 0.1.0.2: https://github.com/evancz/elm-repl"
 
 welcomeMessage = version ++ "   type :help for help"
 
@@ -75,7 +77,7 @@ compilerPath = do
   return path
 
 loop :: Env.Repl -> InputT IO ExitCode
-loop environment@(Env.Repl _ _ _ _ wasCtrlC _) = do
+loop environment@(Env.Repl _ _ _ _ wasCtrlC _ _) = do
   str' <- handleInterrupt (return Nothing) getInput
   case str' of
     Just (':':command) -> runCommand environment command
@@ -123,17 +125,25 @@ runCommand env command =
               ClearFlags -> (env {Env.flags = Map.empty}, putStrLn "All flags cleared")
               InfoFlags -> (env, putStrLn flagsInfo)
               Quit -> (env, exitSuccess)
-              Reset -> (Env.empty $ Env.compilerPath env, none)
+              Reset -> (Env.reset (Env.compilerPath env) (Env.rootDirectory env), putStrLn "Environment Reset")
               Help -> (env, putStrLn helpInfo)
+              ChangeRootDirectory dir -> (env {Env.rootDirectory = Just dir}, putStrLn $ "Changed Current Root Directory: \"" ++ show dir ++ "\"")
       lift $ sideEffects
       loop env'
 
-none = return ()
+--none = return ()
 
 parseCommand :: String -> Either ParseError Command
 parseCommand str = parse commands "" str
 
-commands = flags <|> reset <|> quit <|> help
+commands = changeRootDirectory <|> flags <|> reset <|> quit <|> help
+
+changeRootDirectory = do
+  _ <- try (string "crd") <|> (string "change-root-directory")
+  _ <- many space
+  _ <- char '"'
+  path <- manyTill anyChar (char '"')
+  return (ChangeRootDirectory path)
 
 flags = do
   _ <- string "flags"

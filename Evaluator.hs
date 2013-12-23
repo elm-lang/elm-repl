@@ -42,11 +42,11 @@ runRepl input oldEnv =
     
     nodeArgs = [tempJS]
     elmArgs  = (getSrcs newEnv) ++ ["--make", "--only-js", "--print-types", tempElm]
-
+    
     run name args nextComputation =
       do (_, stdout, stderr, handle') <-
              createProcess (proc name args) { std_out = CreatePipe
-                                            , std_err = CreatePipe }
+                                            , std_err = CreatePipe}
          exitCode <- waitForProcess handle'
          case (exitCode, stdout, stderr) of
            (ExitSuccess, Just out, Just _) ->
@@ -104,7 +104,11 @@ removeIfExists fileName = removeFile fileName `Control.Exception.catch` handleEx
           | otherwise = throwIO e
                         
 getSrcs :: Env.Repl -> [String]
-getSrcs env = map (getFlag . snd) . Map.toList . Env.flags $ env
+getSrcs env = 
+  let srcDirs = map (getFlag . snd) . Map.toList . Env.flags $ env in
+  case (Env.rootDirectory env) of
+       Nothing -> srcDirs
+       Just root -> ("--src-dir=" ++ root) : srcDirs
 
 getFlag :: Env.Flag -> String
 getFlag (p, v) = "--" ++ p ++ "=" ++ v
