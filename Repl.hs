@@ -127,7 +127,7 @@ runCommand env command =
               Quit -> (env, exitSuccess)
               Reset -> (Env.reset (Env.compilerPath env) (Env.rootDirectory env), putStrLn "Environment Reset")
               Help -> (env, putStrLn helpInfo)
-              ChangeRootDirectory dir -> (env {Env.rootDirectory = Just dir}, putStrLn $ "Changed Current Root Directory: \"" ++ show dir ++ "\"")
+              ChangeRootDirectory dir -> (env {Env.rootDirectory = Just dir}, putStrLn $ "Changed Current Root Directory: " ++ show dir)
       lift $ sideEffects
       loop env'
 
