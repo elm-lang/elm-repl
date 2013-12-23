@@ -3,7 +3,7 @@ module Evaluator where
 
 import qualified Data.ByteString.Char8 as BSC
 import qualified Data.ByteString as BS
-import qualified Language.Elm as Elm
+import qualified Elm.Internal.Paths as Elm
 import qualified Environment as Env
 import qualified Data.Map as Map
 import Data.List
@@ -66,7 +66,7 @@ runRepl input oldEnv =
 
 reformatJS :: String -> String -> IO ()
 reformatJS input tempJS =
-  do rts <- BS.readFile =<< Elm.runtime
+  do rts <- BS.readFile Elm.runtime
      src <- BS.readFile tempJS
      BS.length src `seq` BS.writeFile tempJS (BS.concat [rts,src,out])
   where
