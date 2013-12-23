@@ -23,6 +23,7 @@ data Command
  | Quit
  | Reset
  | ChangeRootDirectory String
+ | InfoCRD
    deriving Show
 
 version = "elm-repl, version 0.1.0.2: https://github.com/evancz/elm-repl"
@@ -128,6 +129,7 @@ runCommand env command =
               Reset -> (Env.reset (Env.compilerPath env) (Env.rootDirectory env), putStrLn "Environment Reset")
               Help -> (env, putStrLn helpInfo)
               ChangeRootDirectory dir -> (env {Env.rootDirectory = Just dir}, putStrLn $ "Changed Current Root Directory: " ++ show dir)
+              InfoCRD -> (env, putStrLn crdInfo)
       lift $ sideEffects
       loop env'
 
@@ -136,14 +138,24 @@ runCommand env command =
 parseCommand :: String -> Either ParseError Command
 parseCommand str = parse commands "" str
 
-commands = changeRootDirectory <|> flags <|> reset <|> quit <|> help
+commands = crd <|> flags <|> reset <|> quit <|> help
+
+crd = do
+  _ <- string "change-root"
+  _ <- many space
+  p <- crdoperation
+  return p
+
+crdoperation = changeRootDirectory <|> infoCRD
+
+infoCRD = return InfoCRD
 
 changeRootDirectory = do
-  _ <- try (string "crd") <|> (string "change-root-directory")
-  _ <- many space
   _ <- char '"'
   path <- manyTill anyChar (char '"')
   return (ChangeRootDirectory path)
+
+crdInfo = "Usage: change-root \"path/to/root/\""
 
 flags = do
   _ <- string "flags"
@@ -227,7 +239,8 @@ flagsInfo = "Usage: flags [operation]\n\n" ++
 -}            
 
 helpInfo = "Commands available from the prompt:\n\n" ++
-           "  <statement>\t\tevaluate <statement>\n" ++
+           "   <statement>\t\tevaluate <statement>\n" ++
+           "  :change-root\t\tChanges the Root Directory\n" ++
            "  :flags\t\tManipulate flags sent to elm compiler\n" ++
            "  :help\t\t\tList available commands\n" ++
            "  :reset\t\tClears all previous imports\n" ++
