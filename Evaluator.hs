@@ -72,7 +72,7 @@ reformatJS input tempJS =
   where
     out = BS.concat
           [ "process.on('uncaughtException', function(err) {\n"
-          , "  process.stderr.write(err);\n"
+          , "  process.stderr.write(err.toString());\n"
           , "  process.exit(1);\n"
           , "});\n"
           , "var document = document || {};"
