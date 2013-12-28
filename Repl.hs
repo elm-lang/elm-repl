@@ -3,12 +3,14 @@ module Main where
 
 import Control.Monad
 import Control.Monad.Trans
+import Data.Functor ((<$>))
 import System.Console.Haskeline
 import qualified Evaluator as Eval
 import qualified Environment as Env
-import System.Environment
 import System.Directory
+import System.Environment
 import System.Exit
+import System.FilePath ((</>))
 
 import Text.Parsec hiding(getInput)
 import qualified Data.Map as Map
@@ -37,6 +39,20 @@ displayHelp = putStrLn $
               "  --compiler=PATH\tSpecify the compiler to use when evaluating statements.\n" ++
               "  --help\t\tDisplay help message."
 
+elmdir :: IO FilePath
+elmdir = do
+  dir <- (</> ".elm") <$> getHomeDirectory
+  createDirectoryIfMissing False dir
+  return dir
+
+mkSettings :: (MonadIO m) => IO (Settings m)
+mkSettings = do
+  historyFile <- (</> "elm-repl_history") <$> elmdir
+
+  return $ defaultSettings {
+    historyFile = Just historyFile
+    }
+
 main :: IO ()
 main = do
   helpFlag <- getArgs >>= return . getHelpFlag
@@ -46,8 +62,9 @@ main = do
       buildExisted <- doesDirectoryExist "build"
       cacheExisted <- doesDirectoryExist "cache"
       compilerPath <- getArgs >>= return . getCompilerPath
+      settings     <- mkSettings
       putStrLn welcomeMessage
-      exitCode <- runInputT defaultSettings $ withInterrupt $ loop (Env.empty compilerPath)
+      exitCode <- runInputT settings $ withInterrupt $ loop (Env.empty compilerPath)
       when (not buildExisted) (removeDirectoryRecursive "build")
       when (not cacheExisted) (removeDirectoryRecursive "cache")
       exitWith exitCode

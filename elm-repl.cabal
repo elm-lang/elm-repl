@@ -40,4 +40,5 @@ Executable elm-repl
                        transformers >= 0.2,
                        mtl >= 2,
                        process,
-                       parsec >= 3.0
+                       parsec >= 3.0,
+                       filepath
