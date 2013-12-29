@@ -1,4 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
 module Main where
 
 import Control.Monad
@@ -28,7 +27,8 @@ data Command
     | Reset
       deriving Show
 
-welcomeMessage = "Elm REPL\n\
+welcomeMessage :: String
+welcomeMessage = "Elm REPL <https://github.com/evancz/elm-repl#elm-repl>\n\
                  \Type :help for help, Ctrl-d to exit"
 
 elmdir :: IO FilePath
@@ -84,6 +84,7 @@ runCommand env raw =
       loop env
     Right command -> handleCommand env command
 
+handleCommand :: Env.Repl -> Command -> InputT IO ExitCode
 handleCommand env command =
     let loop' (io,env') = liftIO io >> loop env' in
     case command of
@@ -114,6 +115,7 @@ handleCommand env command =
 
       InfoFlags -> loop' (putStrLn flagsInfo, env)
 
+commands :: Parsec String () Command
 commands = choice (flags : basics)
     where
       basics = map basicCommand [ ("exit",Exit), ("reset",Reset), ("help",Help) ]
@@ -121,6 +123,7 @@ commands = choice (flags : basics)
       basicCommand (name,command) =
           string name >> spaces >> eof >> return command
 
+flags :: Parsec String () Command
 flags = do
   string "flags"
   many space
@@ -135,11 +138,13 @@ flags = do
          , return InfoFlags
          ]
 
+srcDir :: Parsec String () Command
 srcDir = do
   string "--src-dir="
   v <- manyTill anyChar (choice [ space >> return (), eof ])
   return $ AddFlag ("src-dir",v)
-  
+
+flagsInfo :: String
 flagsInfo = "Usage: flags [operation]\n\
             \\n\
             \  operations:\n\
@@ -148,6 +153,7 @@ flagsInfo = "Usage: flags [operation]\n\
             \    remove id\t\t\tRemove a flag by its id\n\
             \    clear\t\t\tClears all flags\n" 
 
+helpInfo :: String
 helpInfo = "General usage directions: <https://github.com/evancz/elm-repl#elm-repl>\n\
            \Additional commands available from the prompt:\n\
            \\n\
