@@ -100,7 +100,7 @@ loop environment = do
   case str' of
     Just (':':command) -> runCommand environment command
     Just input         -> loop =<< liftIO (Eval.runRepl input environment)
-    Nothing            -> return (ExitFailure 130)
+    Nothing            -> return ExitSuccess
 
 getInput :: InputT IO (Maybe String)
 getInput = get "> " ""
