@@ -24,7 +24,7 @@ data Command
     | ClearFlags
     | InfoFlags
     | Help
-    | Quit
+    | Exit
     | Reset
     | ChangeRootDirectory String
     | InfoCRD
@@ -35,17 +35,14 @@ welcomeMessage = "Elm REPL\n\
 
 elmdir :: IO FilePath
 elmdir = do
-  dir <- (</> "repl") <$> (getAppUserDataDirectory "elm")
+  dir <- (</> "repl") <$> getAppUserDataDirectory "elm"
   createDirectoryIfMissing True dir
   return dir
 
 mkSettings :: (MonadIO m) => IO (Settings m)
 mkSettings = do
   historyFile <- (</> "history") <$> elmdir
-
-  return $ defaultSettings {
-    historyFile = Just historyFile
-    }
+  return $ defaultSettings { historyFile = Just historyFile }
 
 main :: IO ()
 main = do
@@ -101,7 +98,7 @@ runCommand env command =
               ListFlags -> (env, mapM_ (putStrLn . Env.formatFlag) . Map.toList $ (Env.flags env))
               ClearFlags -> (env {Env.flags = Map.empty}, putStrLn "All flags cleared")
               InfoFlags -> (env, putStrLn flagsInfo)
-              Quit -> (env, exitSuccess)
+              Exit -> (env, exitSuccess)
               Reset -> (Env.reset (Env.compilerPath env) (Env.rootDirectory env), putStrLn "Environment Reset")
               Help -> (env, putStrLn helpInfo)
               ChangeRootDirectory dir -> (env {Env.rootDirectory = Just dir}, putStrLn $ "Changed Current Root Directory: " ++ show dir)
@@ -112,7 +109,7 @@ runCommand env command =
 parseCommand :: String -> Either ParseError Command
 parseCommand str = parse commands "" str
 
-commands = crd <|> flags <|> reset <|> quit <|> help
+commands = crd <|> flags <|> reset <|> exit <|> help
 
 crd = do
   _ <- string "change-root"
@@ -172,7 +169,7 @@ srcdir = do
   v <- manyTill anyChar endOfInput
   return (AddFlag ("src-dir", v))
   
-quit = basicCommand "quit" Quit
+exit = basicCommand "exit" Exit
   
 reset = basicCommand "reset" Reset
   
@@ -218,4 +215,4 @@ helpInfo = "Commands available from the prompt:\n\n" ++
            "  :flags\t\tManipulate flags sent to elm compiler\n" ++
            "  :help\t\t\tList available commands\n" ++
            "  :reset\t\tClears all previous imports\n" ++
-           "  :quit\t\t\tExits elm-repl.\n"
+           "  :exit\t\t\tExits elm-repl.\n"
