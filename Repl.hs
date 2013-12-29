@@ -187,7 +187,8 @@ flagsInfo = "Usage: flags [operation]\n\n" ++
             "    All flags cleared"
 -}            
 
-helpInfo = "Commands available from the prompt:\n\n\
+helpInfo = "General usage directions: <https://github.com/evancz/elm-repl#elm-repl>\n\
+           \Additional commands available from the prompt:\n\n\
            \  :help\t\t\tList available commands\n\
            \  :flags\t\tManipulate flags sent to elm compiler\n\
            \  :reset\t\tClears all previous imports\n\
