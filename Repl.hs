@@ -95,18 +95,12 @@ compilerPath = do
   return path
 
 loop :: Env.Repl -> InputT IO ExitCode
-loop environment@(Env.Repl _ _ _ _ wasCtrlC _ _) = do
-  str' <- handleInterrupt (return Nothing) getInput
+loop environment = do
+  str' <- handleInterrupt (return . Just $ "") getInput
   case str' of
     Just (':':command) -> runCommand environment command
-    Just input ->
-        loop =<< liftIO (Eval.runRepl input $ environment {Env.ctrlc = False})
-
-    Nothing
-        | wasCtrlC  -> return (ExitFailure 130)
-        | otherwise -> do 
-              lift $ putStrLn "(Ctrl-C again to exit)"
-              loop $ environment {Env.ctrlc = True}
+    Just input         -> loop =<< liftIO (Eval.runRepl input environment)
+    Nothing            -> return ExitSuccess
 
 getInput :: InputT IO (Maybe String)
 getInput = get "> " ""
@@ -114,7 +108,7 @@ getInput = get "> " ""
       get str old = do
         input <- getInputLine str
         case input of
-          Nothing  -> return $ Just old
+          Nothing  -> return Nothing
           Just new -> continueWith (old ++ new)
 
       continueWith str
