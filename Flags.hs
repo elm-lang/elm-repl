@@ -5,6 +5,8 @@ import System.Console.CmdArgs
 import Data.Version (showVersion)
 import qualified Paths_elm_repl as This
 
+version = showVersion This.version
+
 data Flags = Flags
     { compiler :: FilePath
     }
@@ -16,5 +18,5 @@ flags = Flags
   } &= help "Read-eval-print-loop (REPL) for digging deep into Elm projects.\n\
             \More info at <https://github.com/evancz/elm-repl#elm-repl>"
     &= helpArg [explicit, name "help", name "h"]
-    &= versionArg [explicit, name "version", name "v", summary (showVersion This.version)]
-    &= summary ("Elm REPL " ++ showVersion This.version ++ ", (c) Evan Czaplicki 2011-2013")
+    &= versionArg [explicit, name "version", name "v", summary version]
+    &= summary ("Elm REPL " ++ version ++ ", (c) Evan Czaplicki 2011-2013")
