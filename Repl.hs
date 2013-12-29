@@ -41,13 +41,13 @@ displayHelp = putStrLn $
 
 elmdir :: IO FilePath
 elmdir = do
-  dir <- (</> ".elm") <$> getHomeDirectory
-  createDirectoryIfMissing False dir
+  dir <- (</> "repl") <$> (getAppUserDataDirectory "elm")
+  createDirectoryIfMissing True dir
   return dir
 
 mkSettings :: (MonadIO m) => IO (Settings m)
 mkSettings = do
-  historyFile <- (</> "elm-repl_history") <$> elmdir
+  historyFile <- (</> "history") <$> elmdir
 
   return $ defaultSettings {
     historyFile = Just historyFile
