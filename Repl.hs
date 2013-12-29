@@ -2,19 +2,18 @@ module Main where
 
 import Control.Monad
 import Control.Monad.Trans
-import Data.Functor ((<$>))
+import qualified Data.Map as Map
+import qualified Data.List as List
 import System.Console.Haskeline
-import qualified Evaluator as Eval
-import qualified Environment as Env
 import qualified System.Console.CmdArgs as CmdArgs
 import System.Directory
 import System.Environment
 import System.Exit
 import System.FilePath ((</>))
-
 import Text.Parsec hiding (getInput)
-import qualified Data.Map as Map
-import qualified Data.List as List
+
+import qualified Evaluator as Eval
+import qualified Environment as Env
 import qualified Flags
 
 data Command
@@ -34,13 +33,13 @@ welcomeMessage = "Elm REPL <https://github.com/evancz/elm-repl#elm-repl>\n\
 
 elmdir :: IO FilePath
 elmdir = do
-  dir <- (</> "repl") <$> getAppUserDataDirectory "elm"
+  dir <- (</> "repl") `fmap` getAppUserDataDirectory "elm"
   createDirectoryIfMissing True dir
   return dir
 
 mkSettings :: (MonadIO m) => IO (Settings m)
 mkSettings = do
-  historyFile <- (</> "history") <$> elmdir
+  historyFile <- (</> "history") `fmap` elmdir
   return $ defaultSettings { historyFile = Just historyFile }
 
 main :: IO ()
