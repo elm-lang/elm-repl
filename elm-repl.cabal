@@ -1,5 +1,5 @@
 Name:                elm-repl
-Version:             0.1.0.2
+Version:             0.2
 Synopsis:            a REPL for Elm
 Description:         A read-eval-print-loop (REPL) for evaluating Elm expressions,
                      definitions, ADTs, and module imports. This tool is meant to
