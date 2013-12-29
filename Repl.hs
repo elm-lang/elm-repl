@@ -79,11 +79,10 @@ getInput = get "> " ""
 runCommand :: Env.Repl -> String -> InputT IO ExitCode
 runCommand env raw = 
   case parse commands "" raw of
-    Left err -> do
-      lift . putStrLn $ "Could not parse command '" ++ raw ++ "':"
-      lift . putStrLn $ show err
-      loop env
     Right command -> handleCommand env command
+    Left err -> do
+      liftIO . putStrLn $ "Could not parse command '" ++ raw ++ "':\n" ++ show err
+      loop env
 
 handleCommand :: Env.Repl -> Command -> InputT IO ExitCode
 handleCommand env command =
