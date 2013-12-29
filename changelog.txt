@@ -1,0 +1,12 @@
+Release 0.2
+===========
+Features:
+  * Compiler flag control.
+  * Repl commands: help, manipulate flags, clear environment, exit.
+  * Exit on EOF.
+  * Interrupt on Ctrl-c.
+
+Bug fixes:
+  * Fix infinite loop when printing long types.
+  * Fix node.js type error when errors are thrown.
+  * Top-level record literals work.
