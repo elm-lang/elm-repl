@@ -76,34 +76,43 @@ getInput = get "> " ""
         | otherwise = get "| " (init str ++ "\n")
                       
 runCommand :: Env.Repl -> String -> InputT IO ExitCode
-runCommand env command = 
-  case parseCommand command of
+runCommand env raw = 
+  case parse commands "" raw of
     Left err -> do
-      lift . putStrLn $ "Could not parse command '" ++ command ++ "':"
+      lift . putStrLn $ "Could not parse command '" ++ raw ++ "':"
       lift . putStrLn $ show err
       loop env
-    Right command -> do
-      let (env', sideEffects) = 
-            case command of             
-              AddFlag flag -> 
-                let n = (Env.nextKey env) in
-                (env { Env.flags = Map.insert (Env.nextKey env) flag (Env.flags env) }, putStrLn . Env.formatFlag $ (n, flag))
-              RemoveFlag n -> 
-                let flag = Map.lookup n (Env.flags env) in
-                case flag of
-                  Nothing -> (env, putStrLn "No such flag.")
-                  Just f -> (env {Env.flags = Map.delete n $ Env.flags env}, putStrLn . Env.formatFlag $ (n, f))
-              ListFlags -> (env, mapM_ (putStrLn . Env.formatFlag) . Map.toList $ (Env.flags env))
-              ClearFlags -> (env {Env.flags = Map.empty}, putStrLn "All flags cleared")
-              InfoFlags -> (env, putStrLn flagsInfo)
-              Exit -> (env, exitSuccess)
-              Reset -> (Env.reset (Env.compilerPath env) (Env.rootDirectory env), putStrLn "Environment Reset")
-              Help -> (env, putStrLn helpInfo)
-      lift sideEffects
-      loop env'
+    Right command -> handleCommand env command
 
-parseCommand :: String -> Either ParseError Command
-parseCommand str = parse commands "" str
+handleCommand env command =
+    let loop' (io,env') = liftIO io >> loop env' in
+    case command of
+      Exit -> liftIO exitSuccess
+
+      Reset -> loop' ( putStrLn "Environment Reset"
+                     , Env.reset (Env.compilerPath env) (Env.rootDirectory env) )
+
+      Help -> loop' (putStrLn helpInfo, env)
+
+      AddFlag flag ->
+        let n = Env.nextKey env in
+        loop' ( putStrLn $ Env.formatFlag (n, flag)
+              , env { Env.flags = Map.insert (Env.nextKey env) flag (Env.flags env) } )
+
+      RemoveFlag n ->
+        let flag = Map.lookup n (Env.flags env) in
+        case flag of
+          Nothing -> loop' ( putStrLn "No such flag.", env )
+          Just f  -> loop' ( putStrLn $ Env.formatFlag (n,f)
+                           , env {Env.flags = Map.delete n $ Env.flags env} )
+
+      ListFlags -> do
+        liftIO . mapM_ (putStrLn . Env.formatFlag) . Map.toList $ Env.flags env
+        loop env
+
+      ClearFlags -> loop' (putStrLn "All flags cleared", env {Env.flags = Map.empty})
+
+      InfoFlags -> loop' (putStrLn flagsInfo, env)
 
 commands = choice (flags : basics)
     where
