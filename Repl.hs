@@ -29,7 +29,7 @@ data Command
 
 welcomeMessage :: String
 welcomeMessage = "Elm REPL <https://github.com/evancz/elm-repl#elm-repl>\n\
-                 \Type :help for help, Ctrl-d to exit"
+                 \Type :help for help, :exit to exit"
 
 elmdir :: IO FilePath
 elmdir = do
