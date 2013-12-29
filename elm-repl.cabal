@@ -1,5 +1,5 @@
 Name:                elm-repl
-Version:             0.1.0.2
+Version:             0.2
 Synopsis:            a REPL for Elm
 Description:         A read-eval-print-loop (REPL) for evaluating Elm expressions,
                      definitions, ADTs, and module imports. This tool is meant to
@@ -28,10 +28,12 @@ source-repository head
 Executable elm-repl
   Main-is:             Repl.hs
   other-modules:       Environment,
-                       Evaluator
+                       Evaluator,
+                       Flags
 
   Build-depends:       base >=4.2 && <5,
                        bytestring,
+                       cmdargs,
                        containers >= 0.3,
                        directory,
                        Elm >= 0.10.0.2,
@@ -40,4 +42,5 @@ Executable elm-repl
                        transformers >= 0.2,
                        mtl >= 2,
                        process,
-                       parsec >= 3.0
+                       parsec >= 3.0,
+                       filepath

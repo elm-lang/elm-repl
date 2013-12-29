@@ -1,95 +1,68 @@
-{-# LANGUAGE OverloadedStrings #-}
 module Main where
 
 import Control.Monad
 import Control.Monad.Trans
+import qualified Data.Map as Map
+import qualified Data.List as List
 import System.Console.Haskeline
+import qualified System.Console.CmdArgs as CmdArgs
+import System.Directory
+import System.Environment
+import System.Exit
+import System.FilePath ((</>))
+import Text.Parsec hiding (getInput)
+
 import qualified Evaluator as Eval
 import qualified Environment as Env
-import System.Environment
-import System.Directory
-import System.Exit
-
-import Text.Parsec hiding(getInput)
-import qualified Data.Map as Map
+import qualified Flags
 
 data Command
- = AddFlag Env.Flag
- | RemoveFlag Env.FlagKey
- | ListFlags
- | ClearFlags
- | InfoFlags
- | Help
- | Quit
- | Reset
- | ChangeRootDirectory String
- | InfoCRD
-   deriving Show
+    = AddFlag String
+    | RemoveFlag String
+    | ListFlags
+    | ClearFlags
+    | InfoFlags
+    | Help
+    | Exit
+    | Reset
+      deriving Show
 
-version = "elm-repl, version 0.1.0.2: https://github.com/evancz/elm-repl"
+welcomeMessage :: String
+welcomeMessage =
+    "Elm REPL " ++ Flags.version ++
+    " <https://github.com/evancz/elm-repl#elm-repl>\n\
+    \Type :help for help, :exit to exit"
 
-welcomeMessage = version ++ "   type :help for help"
+elmdir :: IO FilePath
+elmdir = do
+  dir <- (</> "repl") `fmap` getAppUserDataDirectory "elm"
+  createDirectoryIfMissing True dir
+  return dir
 
-displayHelp = putStrLn $ 
-              version ++ "\n\n" ++
-              "Usage: elm-repl [OPTIONS]\n\n" ++
-              "Flags:\n" ++
-              "  --compiler=PATH\tSpecify the compiler to use when evaluating statements.\n" ++
-              "  --help\t\tDisplay help message."
+mkSettings :: (MonadIO m) => IO (Settings m)
+mkSettings = do
+  historyFile <- (</> "history") `fmap` elmdir
+  return $ defaultSettings { historyFile = Just historyFile }
 
 main :: IO ()
 main = do
-  helpFlag <- getArgs >>= return . getHelpFlag
-  case helpFlag of
-    True -> displayHelp
-    _ -> do
-      buildExisted <- doesDirectoryExist "build"
-      cacheExisted <- doesDirectoryExist "cache"
-      compilerPath <- getArgs >>= return . getCompilerPath
-      putStrLn welcomeMessage
-      exitCode <- runInputT defaultSettings $ withInterrupt $ loop (Env.empty compilerPath)
-      when (not buildExisted) (removeDirectoryRecursive "build")
-      when (not cacheExisted) (removeDirectoryRecursive "cache")
-      exitWith exitCode
-
-getHelpFlag :: [String] -> Bool
-getHelpFlag [] = False
-getHelpFlag (x:xs) =
-  let parsed = parse helpFlag "" x in
-  case parsed of
-    Left _ -> getHelpFlag xs
-    Right _ -> True
-    
-helpFlag = do
-  _ <- string "--help"
-  return True
-
-getCompilerPath :: [String] -> FilePath
-getCompilerPath [] = "elm"
-getCompilerPath (x:xs) = 
-  let parsed = parse compilerPath "" x in
-  case parsed of
-    Left _ -> getCompilerPath xs
-    Right path -> path
-
-compilerPath = do
-  _ <- string "--compiler="
-  path <- manyTill anyChar endOfInput
-  return path
+  flags <- CmdArgs.cmdArgs Flags.flags
+  buildExisted <- doesDirectoryExist "build"
+  cacheExisted <- doesDirectoryExist "cache"
+  settings     <- mkSettings
+  putStrLn welcomeMessage
+  exitCode <- runInputT settings $ withInterrupt $ loop (Env.empty (Flags.compiler flags))
+  when (not buildExisted) (removeDirectoryRecursive "build")
+  when (not cacheExisted) (removeDirectoryRecursive "cache")
+  exitWith exitCode
 
 loop :: Env.Repl -> InputT IO ExitCode
-loop environment@(Env.Repl _ _ _ _ wasCtrlC _ _) = do
-  str' <- handleInterrupt (return Nothing) getInput
+loop environment = do
+  str' <- handleInterrupt (return . Just $ "") getInput
   case str' of
     Just (':':command) -> runCommand environment command
-    Just input ->
-        loop =<< liftIO (Eval.runRepl input $ environment {Env.ctrlc = False})
-
-    Nothing
-        | wasCtrlC  -> return (ExitFailure 130)
-        | otherwise -> do 
-              lift $ putStrLn "(Ctrl-C again to exit)"
-              loop $ environment {Env.ctrlc = True}
+    Just input         -> loop =<< liftIO (Eval.runRepl input environment)
+    Nothing            -> return ExitSuccess
 
 getInput :: InputT IO (Maybe String)
 getInput = get "> " ""
@@ -97,7 +70,7 @@ getInput = get "> " ""
       get str old = do
         input <- getInputLine str
         case input of
-          Nothing  -> return $ Just old
+          Nothing  -> return Nothing
           Just new -> continueWith (old ++ new)
 
       continueWith str
@@ -105,143 +78,84 @@ getInput = get "> " ""
         | otherwise = get "| " (init str ++ "\n")
                       
 runCommand :: Env.Repl -> String -> InputT IO ExitCode
-runCommand env command = 
-  case parseCommand command of
+runCommand env raw = 
+  case parse commands "" raw of
+    Right command -> handleCommand env command
     Left err -> do
-      lift . putStrLn $ "Could not parse command '" ++ command ++ "':"
-      lift . putStrLn . show $ err
+      liftIO . putStrLn $ "Could not parse command '" ++ raw ++ "':\n" ++ show err
       loop env
-    Right command -> do
-      let (env', sideEffects) = 
-            case command of             
-              AddFlag flag -> 
-                let n = (Env.nextKey env) in
-                (env { Env.flags = Map.insert (Env.nextKey env) flag (Env.flags env) }, putStrLn . Env.formatFlag $ (n, flag))
-              RemoveFlag n -> 
-                let flag = Map.lookup n (Env.flags env) in
-                case flag of
-                  Nothing -> (env, putStrLn "No such flag.")
-                  Just f -> (env {Env.flags = Map.delete n $ Env.flags env}, putStrLn . Env.formatFlag $ (n, f))
-              ListFlags -> (env, mapM_ (putStrLn . Env.formatFlag) . Map.toList $ (Env.flags env))
-              ClearFlags -> (env {Env.flags = Map.empty}, putStrLn "All flags cleared")
-              InfoFlags -> (env, putStrLn flagsInfo)
-              Quit -> (env, exitSuccess)
-              Reset -> (Env.reset (Env.compilerPath env) (Env.rootDirectory env), putStrLn "Environment Reset")
-              Help -> (env, putStrLn helpInfo)
-              ChangeRootDirectory dir -> (env {Env.rootDirectory = Just dir}, putStrLn $ "Changed Current Root Directory: " ++ show dir)
-              InfoCRD -> (env, putStrLn crdInfo)
-      lift $ sideEffects
-      loop env'
 
---none = return ()
+handleCommand :: Env.Repl -> Command -> InputT IO ExitCode
+handleCommand env command =
+    let loop' (msg,env') = liftIO (putStrLn msg) >> loop env' in
+    case command of
+      Exit  -> liftIO exitSuccess
 
-parseCommand :: String -> Either ParseError Command
-parseCommand str = parse commands "" str
+      Reset -> loop' ("Environment Reset", Env.empty (Env.compilerPath env))
 
-commands = crd <|> flags <|> reset <|> quit <|> help
+      Help  -> loop' (helpInfo, env)
 
-crd = do
-  _ <- string "change-root"
-  _ <- many space
-  p <- crdoperation
-  return p
+      AddFlag flag ->
+          if flag `elem` Env.flags env
+          then loop' ( "Flag already added!", env )
+          else loop' ( "Added " ++ flag
+                     , env { Env.flags = Env.flags env ++ [flag] } )
 
-crdoperation = changeRootDirectory <|> infoCRD
+      RemoveFlag flag ->
+          if flag `notElem` Env.flags env
+          then loop' ( "No such flag.", env )
+          else loop' ( "Removed flag " ++ flag
+                     , env {Env.flags = List.delete flag $ Env.flags env} )
 
-infoCRD = return InfoCRD
+      ListFlags  -> loop' (List.intercalate "\n" $ Env.flags env, env)
 
-changeRootDirectory = do
-  _ <- char '"'
-  path <- manyTill anyChar (char '"')
-  return (ChangeRootDirectory path)
+      ClearFlags -> loop' ("All flags cleared", env {Env.flags = []})
 
-crdInfo = "Usage: change-root \"path/to/root/\""
+      InfoFlags  -> loop' (flagsInfo, env)
 
+commands :: Parsec String () Command
+commands = choice (flags : basics)
+    where
+      basics = map basicCommand [ ("exit",Exit), ("reset",Reset), ("help",Help) ]
+
+      basicCommand (name,command) =
+          string name >> spaces >> eof >> return command
+
+flags :: Parsec String () Command
 flags = do
-  _ <- string "flags"
-  _ <- many space
-  p <- flagoperation
-  return p
+  string "flags"
+  many space
+  choice [ do string "add" >> many1 space >> srcDir
+         , do string "remove" >> many1 space
+              n <- many1 digit
+              return $ RemoveFlag (read n)
+         , do string "list"
+              return ListFlags
+         , do string "clear"
+              return ClearFlags
+         , return InfoFlags
+         ]
 
-flagoperation = addflag <|> removeflag <|> listflags <|> clearflags <|> infoflags
+srcDir :: Parsec String () Command
+srcDir = do
+  string "--src-dir="
+  dir <- manyTill anyChar (choice [ space >> return (), eof ])
+  return $ AddFlag $ "--src-dir=" ++ dir
 
-infoflags = return InfoFlags
+flagsInfo :: String
+flagsInfo = "Usage: flags [operation]\n\
+            \\n\
+            \  operations:\n\
+            \    add --src-dir=FILEPATH\tAdd a compiler flag\n\
+            \    remove --src-dir=FILEPATH\tRemove a compiler flag\n\
+            \    list\t\t\tList all flags that have been added\n\
+            \    clear\t\t\tClears all flags\n" 
 
-
-addflag = do
-  _ <- string "add"
-  _ <- many1 space
-  property
-
-removeflag = do
-  _ <- string "remove"
-  _ <- many1 space
-  n <- many1 digit
-  return (RemoveFlag . read $ n)
-  
-listflags = do
-  _ <- string "list"
-  return ListFlags
-  
-clearflags = do
-  _ <- string "clear"
-  return ClearFlags
-
-endOfInput = space <|> eof'
-
-eof' = eof >> return ' '
-
-property = srcdir
-
-srcdir = do
-  _ <- string "--src-dir="
-  v <- manyTill anyChar endOfInput
-  return (AddFlag ("src-dir", v))
-  
-quit = basicCommand "quit" Quit
-  
-reset = basicCommand "reset" Reset
-  
-help = basicCommand "help" Help
-
-basicCommand c const = do
-  _ <- string c
-  _ <- spaces
-  _ <- eof
-  return const                      
-  
-flagsInfo = "Usage: flags [operation]\n\n" ++
-            "  operations:\n" ++
-            "    add --property=value\tSets a flag with the specified property.\n" ++
-            "    remove flag-id\t\tRemoves a flag by its id.\n" ++
-            "    list\t\t\tLists all flags and their ids.\n" ++
-            "    clear\t\t\tClears all flags.\n\n" ++
-            "  properties:\n" ++
-            "    src-dir\t\t\tAdds a source directory to be searched during evaluation." 
-{-            
-            "  examples:\n" ++
-            "    Add \"some/dir\" to the path of searched directories\n" ++
-            "    > :flags set src-dir=some/dir\n" ++
-            "    0: src-dir=some/dir\n\n" ++
-            "    Add \"another/dir\" to the path of searched directories\n" ++
-            "    > :flags set src-dir=another/dir\n" ++
-            "    1: src-dir=another/dir\n\n" ++
-            "    List all set flags:\n" ++
-            "    > :flags list\n" ++
-            "    0: src-dir=some/dir\n" ++
-            "    1: src-dir=another/dir\n\n" ++
-            "    Remove \"some/dir\" from the path of searched directores\n" ++
-            "    > :flags remove 0\n" ++
-            "    0: src-dir=some/dir\n\n" ++
-            "    Clear all flags\n" ++
-            "    > :flags clear\n" ++
-            "    All flags cleared"
--}            
-
-helpInfo = "Commands available from the prompt:\n\n" ++
-           "   <statement>\t\tevaluate <statement>\n" ++
-           "  :change-root\t\tChanges the Root Directory\n" ++
-           "  :flags\t\tManipulate flags sent to elm compiler\n" ++
-           "  :help\t\t\tList available commands\n" ++
-           "  :reset\t\tClears all previous imports\n" ++
-           "  :quit\t\t\tExits elm-repl.\n"
+helpInfo :: String
+helpInfo = "General usage directions: <https://github.com/evancz/elm-repl#elm-repl>\n\
+           \Additional commands available from the prompt:\n\
+           \\n\
+           \  :help\t\t\tList available commands\n\
+           \  :flags\t\tManipulate flags sent to elm compiler\n\
+           \  :reset\t\tClears all previous imports\n\
+           \  :exit\t\t\tExits elm-repl\n"
