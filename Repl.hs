@@ -105,7 +105,12 @@ runCommand env command =
 parseCommand :: String -> Either ParseError Command
 parseCommand str = parse commands "" str
 
-commands = flags <|> reset <|> exit <|> help
+commands = choice (flags : basics)
+    where
+      basics = map basicCommand [ ("exit",Exit), ("reset",Reset), ("help",Help) ]
+
+      basicCommand (name,command) =
+          string name >> spaces >> eof >> return command
 
 flags = do
   _ <- string "flags"
@@ -147,45 +152,14 @@ srcdir = do
   v <- manyTill anyChar endOfInput
   return (AddFlag ("src-dir", v))
   
-exit = basicCommand "exit" Exit
-  
-reset = basicCommand "reset" Reset
-  
-help = basicCommand "help" Help
-
-basicCommand c const = do
-  _ <- string c
-  _ <- spaces
-  _ <- eof
-  return const                      
-  
-flagsInfo = "Usage: flags [operation]\n\n" ++
-            "  operations:\n" ++
-            "    add --property=value\tSets a flag with the specified property.\n" ++
-            "    remove flag-id\t\tRemoves a flag by its id.\n" ++
-            "    list\t\t\tLists all flags and their ids.\n" ++
-            "    clear\t\t\tClears all flags.\n\n" ++
-            "  properties:\n" ++
-            "    src-dir\t\t\tAdds a source directory to be searched during evaluation." 
-{-            
-            "  examples:\n" ++
-            "    Add \"some/dir\" to the path of searched directories\n" ++
-            "    > :flags set src-dir=some/dir\n" ++
-            "    0: src-dir=some/dir\n\n" ++
-            "    Add \"another/dir\" to the path of searched directories\n" ++
-            "    > :flags set src-dir=another/dir\n" ++
-            "    1: src-dir=another/dir\n\n" ++
-            "    List all set flags:\n" ++
-            "    > :flags list\n" ++
-            "    0: src-dir=some/dir\n" ++
-            "    1: src-dir=another/dir\n\n" ++
-            "    Remove \"some/dir\" from the path of searched directores\n" ++
-            "    > :flags remove 0\n" ++
-            "    0: src-dir=some/dir\n\n" ++
-            "    Clear all flags\n" ++
-            "    > :flags clear\n" ++
-            "    All flags cleared"
--}            
+flagsInfo = "Usage: flags [operation]\n\n\
+            \  operations:\n\
+            \    add --property=value\tSets a flag with the specified property.\n\
+            \    remove flag-id\t\tRemoves a flag by its id.\n\
+            \    list\t\t\tLists all flags and their ids.\n\
+            \    clear\t\t\tClears all flags.\n\n\
+            \  properties:\n\
+            \    src-dir\t\t\tAdds a source directory to be searched during evaluation." 
 
 helpInfo = "General usage directions: <https://github.com/evancz/elm-repl#elm-repl>\n\
            \Additional commands available from the prompt:\n\n\
