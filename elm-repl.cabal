@@ -36,7 +36,7 @@ Executable elm-repl
                        cmdargs,
                        containers >= 0.3,
                        directory,
-                       Elm >= 0.10.0.2,
+                       Elm >= 0.10.1,
                        filepath,
                        haskeline,
                        transformers >= 0.2,
