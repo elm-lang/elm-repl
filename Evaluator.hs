@@ -42,7 +42,7 @@ runRepl input oldEnv =
     tempJS  = "build" </> replaceExtension tempElm "js"
     
     nodeArgs = [tempJS]
-    elmArgs  = (getSrcs newEnv) ++ ["--make", "--only-js", "--print-types", tempElm]
+    elmArgs  = Env.flags newEnv ++ ["--make", "--only-js", "--print-types", tempElm]
 
 runCmdWithCallback :: FilePath -> [String] -> (BS.ByteString -> IO Bool) -> IO Bool
 runCmdWithCallback name args callback = do
@@ -101,13 +101,3 @@ removeIfExists fileName = removeFile fileName `Control.Exception.catch` handleEx
   where handleExists e
           | isDoesNotExistError e = return ()
           | otherwise = throwIO e
-                        
-getSrcs :: Env.Repl -> [String]
-getSrcs env = 
-  let srcDirs = map (getFlag . snd) . Map.toList . Env.flags $ env in
-  case (Env.rootDirectory env) of
-       Nothing -> srcDirs
-       Just root -> ("--src-dir=" ++ root) : srcDirs
-
-getFlag :: Env.Flag -> String
-getFlag (p, v) = "--" ++ p ++ "=" ++ v

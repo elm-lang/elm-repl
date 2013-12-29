@@ -14,11 +14,12 @@ import System.FilePath ((</>))
 
 import Text.Parsec hiding (getInput)
 import qualified Data.Map as Map
+import qualified Data.List as List
 import qualified Flags
 
 data Command
-    = AddFlag Env.Flag
-    | RemoveFlag Env.FlagKey
+    = AddFlag String
+    | RemoveFlag String
     | ListFlags
     | ClearFlags
     | InfoFlags
@@ -86,34 +87,31 @@ runCommand env raw =
 
 handleCommand :: Env.Repl -> Command -> InputT IO ExitCode
 handleCommand env command =
-    let loop' (io,env') = liftIO io >> loop env' in
+    let loop' (msg,env') = liftIO (putStrLn msg) >> loop env' in
     case command of
-      Exit -> liftIO exitSuccess
+      Exit  -> liftIO exitSuccess
 
-      Reset -> loop' ( putStrLn "Environment Reset"
-                     , Env.reset (Env.compilerPath env) (Env.rootDirectory env) )
+      Reset -> loop' ("Environment Reset", Env.empty (Env.compilerPath env))
 
-      Help -> loop' (putStrLn helpInfo, env)
+      Help  -> loop' (helpInfo, env)
 
       AddFlag flag ->
-        let n = Env.nextKey env in
-        loop' ( putStrLn $ Env.formatFlag (n, flag)
-              , env { Env.flags = Map.insert (Env.nextKey env) flag (Env.flags env) } )
+          if flag `elem` Env.flags env
+          then loop' ( "Flag already added!", env )
+          else loop' ( "Added " ++ flag
+                     , env { Env.flags = Env.flags env ++ [flag] } )
 
-      RemoveFlag n ->
-        let flag = Map.lookup n (Env.flags env) in
-        case flag of
-          Nothing -> loop' ( putStrLn "No such flag.", env )
-          Just f  -> loop' ( putStrLn $ Env.formatFlag (n,f)
-                           , env {Env.flags = Map.delete n $ Env.flags env} )
+      RemoveFlag flag ->
+          if flag `notElem` Env.flags env
+          then loop' ( "No such flag.", env )
+          else loop' ( "Removed flag " ++ flag
+                     , env {Env.flags = List.delete flag $ Env.flags env} )
 
-      ListFlags -> do
-        liftIO . mapM_ (putStrLn . Env.formatFlag) . Map.toList $ Env.flags env
-        loop env
+      ListFlags  -> loop' (List.intercalate "\n" $ Env.flags env, env)
 
-      ClearFlags -> loop' (putStrLn "All flags cleared", env {Env.flags = Map.empty})
+      ClearFlags -> loop' ("All flags cleared", env {Env.flags = []})
 
-      InfoFlags -> loop' (putStrLn flagsInfo, env)
+      InfoFlags  -> loop' (flagsInfo, env)
 
 commands :: Parsec String () Command
 commands = choice (flags : basics)
@@ -141,16 +139,16 @@ flags = do
 srcDir :: Parsec String () Command
 srcDir = do
   string "--src-dir="
-  v <- manyTill anyChar (choice [ space >> return (), eof ])
-  return $ AddFlag ("src-dir",v)
+  dir <- manyTill anyChar (choice [ space >> return (), eof ])
+  return $ AddFlag $ "--src-dir=" ++ dir
 
 flagsInfo :: String
 flagsInfo = "Usage: flags [operation]\n\
             \\n\
             \  operations:\n\
             \    add --src-dir=FILEPATH\tAdd a compiler flag\n\
+            \    remove --src-dir=FILEPATH\tRemove a compiler flag\n\
             \    list\t\t\tList all flags that have been added\n\
-            \    remove id\t\t\tRemove a flag by its id\n\
             \    clear\t\t\tClears all flags\n" 
 
 helpInfo :: String
