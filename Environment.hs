@@ -59,7 +59,7 @@ insert str env
         case break (=='=') str of
           (_,"") -> display str env
           (beforeEquals, _:c:_)
-              | isSymbol c || hasLet beforeEquals -> display str env
+              | isSymbol c || hasLet beforeEquals || hasBrace beforeEquals -> display str env
               | otherwise -> let name = declName beforeEquals
                              in  define name str (display name env)
           _ -> error "Environment.hs: Case error. Submit bug report."
@@ -73,6 +73,8 @@ insert str env
               where
                 isVarChar c = isAlpha c || isDigit c || elem c "_'"
                 token = takeWhile isVarChar . dropWhile (not . isAlpha)
+
+          hasBrace = elem '{'
 
 define :: String -> String -> Repl -> Repl
 define name body env = env { defs = Map.insert name body (defs env) }
