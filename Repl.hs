@@ -26,8 +26,6 @@ data Command
     | Help
     | Exit
     | Reset
-    | ChangeRootDirectory String
-    | InfoCRD
       deriving Show
 
 welcomeMessage = "Elm REPL\n\
@@ -82,7 +80,7 @@ runCommand env command =
   case parseCommand command of
     Left err -> do
       lift . putStrLn $ "Could not parse command '" ++ command ++ "':"
-      lift . putStrLn . show $ err
+      lift . putStrLn $ show err
       loop env
     Right command -> do
       let (env', sideEffects) = 
@@ -101,32 +99,13 @@ runCommand env command =
               Exit -> (env, exitSuccess)
               Reset -> (Env.reset (Env.compilerPath env) (Env.rootDirectory env), putStrLn "Environment Reset")
               Help -> (env, putStrLn helpInfo)
-              ChangeRootDirectory dir -> (env {Env.rootDirectory = Just dir}, putStrLn $ "Changed Current Root Directory: " ++ show dir)
-              InfoCRD -> (env, putStrLn crdInfo)
-      lift $ sideEffects
+      lift sideEffects
       loop env'
 
 parseCommand :: String -> Either ParseError Command
 parseCommand str = parse commands "" str
 
-commands = crd <|> flags <|> reset <|> exit <|> help
-
-crd = do
-  _ <- string "change-root"
-  _ <- many space
-  p <- crdoperation
-  return p
-
-crdoperation = changeRootDirectory <|> infoCRD
-
-infoCRD = return InfoCRD
-
-changeRootDirectory = do
-  _ <- char '"'
-  path <- manyTill anyChar (char '"')
-  return (ChangeRootDirectory path)
-
-crdInfo = "Usage: change-root \"path/to/root/\""
+commands = flags <|> reset <|> exit <|> help
 
 flags = do
   _ <- string "flags"
@@ -137,7 +116,6 @@ flags = do
 flagoperation = addflag <|> removeflag <|> listflags <|> clearflags <|> infoflags
 
 infoflags = return InfoFlags
-
 
 addflag = do
   _ <- string "add"
@@ -209,10 +187,8 @@ flagsInfo = "Usage: flags [operation]\n\n" ++
             "    All flags cleared"
 -}            
 
-helpInfo = "Commands available from the prompt:\n\n" ++
-           "   <statement>\t\tevaluate <statement>\n" ++
-           "  :change-root\t\tChanges the Root Directory\n" ++
-           "  :flags\t\tManipulate flags sent to elm compiler\n" ++
-           "  :help\t\t\tList available commands\n" ++
-           "  :reset\t\tClears all previous imports\n" ++
-           "  :exit\t\t\tExits elm-repl.\n"
+helpInfo = "Commands available from the prompt:\n\n\
+           \  :help\t\t\tList available commands\n\
+           \  :flags\t\tManipulate flags sent to elm compiler\n\
+           \  :reset\t\tClears all previous imports\n\
+           \  :exit\t\t\tExits elm-repl.\n"
