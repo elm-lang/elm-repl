@@ -27,13 +27,21 @@ nextKey repl
   | otherwise = (+1) . fst . Map.findMax . flags $ repl
 
 formatFlag :: (FlagKey, Flag) -> String
-formatFlag (k, (p, v)) = (show k) ++ ": " ++ p ++ "=" ++ v
+formatFlag (k, (p, v)) = (show k) ++ ": --" ++ p ++ "=" ++ v
 
 empty :: FilePath -> Repl
-empty compilerPath = Repl compilerPath Map.empty Map.empty (Map.singleton "t_s_o_l_" "t_s_o_l_ = ()") Map.empty Nothing
+empty compilerPath =
+    Repl compilerPath Map.empty Map.empty
+        (Map.singleton "t_s_o_l_" "t_s_o_l_ = ()")
+        Map.empty
+        Nothing
 
 reset :: FilePath -> Maybe FilePath -> Repl
-reset compilerPath workingDirectory = Repl compilerPath Map.empty Map.empty (Map.singleton "t_s_o_l_" "t_s_o_l_ = ()") Map.empty workingDirectory
+reset compilerPath workingDirectory =
+    Repl compilerPath Map.empty Map.empty
+        (Map.singleton "t_s_o_l_" "t_s_o_l_ = ()")
+        Map.empty
+        workingDirectory
 
 output :: BS.ByteString
 output = "deltron3030"

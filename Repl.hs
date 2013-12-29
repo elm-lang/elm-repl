@@ -113,57 +113,36 @@ commands = choice (flags : basics)
           string name >> spaces >> eof >> return command
 
 flags = do
-  _ <- string "flags"
-  _ <- many space
-  p <- flagoperation
-  return p
+  string "flags"
+  many space
+  choice [ do string "add" >> many1 space >> srcDir
+         , do string "remove" >> many1 space
+              n <- many1 digit
+              return $ RemoveFlag (read n)
+         , do string "list"
+              return ListFlags
+         , do string "clear"
+              return ClearFlags
+         , return InfoFlags
+         ]
 
-flagoperation = addflag <|> removeflag <|> listflags <|> clearflags <|> infoflags
-
-infoflags = return InfoFlags
-
-addflag = do
-  _ <- string "add"
-  _ <- many1 space
-  property
-
-removeflag = do
-  _ <- string "remove"
-  _ <- many1 space
-  n <- many1 digit
-  return (RemoveFlag . read $ n)
+srcDir = do
+  string "--src-dir="
+  v <- manyTill anyChar (choice [ space >> return (), eof ])
+  return $ AddFlag ("src-dir",v)
   
-listflags = do
-  _ <- string "list"
-  return ListFlags
-  
-clearflags = do
-  _ <- string "clear"
-  return ClearFlags
-
-endOfInput = space <|> eof'
-
-eof' = eof >> return ' '
-
-property = srcdir
-
-srcdir = do
-  _ <- string "--src-dir="
-  v <- manyTill anyChar endOfInput
-  return (AddFlag ("src-dir", v))
-  
-flagsInfo = "Usage: flags [operation]\n\n\
+flagsInfo = "Usage: flags [operation]\n\
+            \\n\
             \  operations:\n\
-            \    add --property=value\tSets a flag with the specified property.\n\
-            \    remove flag-id\t\tRemoves a flag by its id.\n\
-            \    list\t\t\tLists all flags and their ids.\n\
-            \    clear\t\t\tClears all flags.\n\n\
-            \  properties:\n\
-            \    src-dir\t\t\tAdds a source directory to be searched during evaluation." 
+            \    add --src-dir=FILEPATH\tAdd a compiler flag\n\
+            \    list\t\t\tList all flags that have been added\n\
+            \    remove id\t\t\tRemove a flag by its id\n\
+            \    clear\t\t\tClears all flags\n" 
 
 helpInfo = "General usage directions: <https://github.com/evancz/elm-repl#elm-repl>\n\
-           \Additional commands available from the prompt:\n\n\
+           \Additional commands available from the prompt:\n\
+           \\n\
            \  :help\t\t\tList available commands\n\
            \  :flags\t\tManipulate flags sent to elm compiler\n\
            \  :reset\t\tClears all previous imports\n\
-           \  :exit\t\t\tExits elm-repl.\n"
+           \  :exit\t\t\tExits elm-repl\n"
