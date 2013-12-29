@@ -28,10 +28,12 @@ source-repository head
 Executable elm-repl
   Main-is:             Repl.hs
   other-modules:       Environment,
-                       Evaluator
+                       Evaluator,
+                       Flags
 
   Build-depends:       base >=4.2 && <5,
                        bytestring,
+                       cmdargs,
                        containers >= 0.3,
                        directory,
                        Elm >= 0.10.0.2,

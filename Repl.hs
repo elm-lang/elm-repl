@@ -7,37 +7,31 @@ import Data.Functor ((<$>))
 import System.Console.Haskeline
 import qualified Evaluator as Eval
 import qualified Environment as Env
+import qualified System.Console.CmdArgs as CmdArgs
 import System.Directory
 import System.Environment
 import System.Exit
 import System.FilePath ((</>))
 
-import Text.Parsec hiding(getInput)
+import Text.Parsec hiding (getInput)
 import qualified Data.Map as Map
+import qualified Flags
 
 data Command
- = AddFlag Env.Flag
- | RemoveFlag Env.FlagKey
- | ListFlags
- | ClearFlags
- | InfoFlags
- | Help
- | Quit
- | Reset
- | ChangeRootDirectory String
- | InfoCRD
-   deriving Show
+    = AddFlag Env.Flag
+    | RemoveFlag Env.FlagKey
+    | ListFlags
+    | ClearFlags
+    | InfoFlags
+    | Help
+    | Quit
+    | Reset
+    | ChangeRootDirectory String
+    | InfoCRD
+      deriving Show
 
-version = "elm-repl, version 0.1.0.2: https://github.com/evancz/elm-repl"
-
-welcomeMessage = version ++ "   type :help for help"
-
-displayHelp = putStrLn $ 
-              version ++ "\n\n" ++
-              "Usage: elm-repl [OPTIONS]\n\n" ++
-              "Flags:\n" ++
-              "  --compiler=PATH\tSpecify the compiler to use when evaluating statements.\n" ++
-              "  --help\t\tDisplay help message."
+welcomeMessage = "Elm REPL\n\
+                 \Type :help for help, Ctrl-d to exit"
 
 elmdir :: IO FilePath
 elmdir = do
@@ -55,44 +49,15 @@ mkSettings = do
 
 main :: IO ()
 main = do
-  helpFlag <- getArgs >>= return . getHelpFlag
-  case helpFlag of
-    True -> displayHelp
-    _ -> do
-      buildExisted <- doesDirectoryExist "build"
-      cacheExisted <- doesDirectoryExist "cache"
-      compilerPath <- getArgs >>= return . getCompilerPath
-      settings     <- mkSettings
-      putStrLn welcomeMessage
-      exitCode <- runInputT settings $ withInterrupt $ loop (Env.empty compilerPath)
-      when (not buildExisted) (removeDirectoryRecursive "build")
-      when (not cacheExisted) (removeDirectoryRecursive "cache")
-      exitWith exitCode
-
-getHelpFlag :: [String] -> Bool
-getHelpFlag [] = False
-getHelpFlag (x:xs) =
-  let parsed = parse helpFlag "" x in
-  case parsed of
-    Left _ -> getHelpFlag xs
-    Right _ -> True
-    
-helpFlag = do
-  _ <- string "--help"
-  return True
-
-getCompilerPath :: [String] -> FilePath
-getCompilerPath [] = "elm"
-getCompilerPath (x:xs) = 
-  let parsed = parse compilerPath "" x in
-  case parsed of
-    Left _ -> getCompilerPath xs
-    Right path -> path
-
-compilerPath = do
-  _ <- string "--compiler="
-  path <- manyTill anyChar endOfInput
-  return path
+  flags <- CmdArgs.cmdArgs Flags.flags
+  buildExisted <- doesDirectoryExist "build"
+  cacheExisted <- doesDirectoryExist "cache"
+  settings     <- mkSettings
+  putStrLn welcomeMessage
+  exitCode <- runInputT settings $ withInterrupt $ loop (Env.empty (Flags.compiler flags))
+  when (not buildExisted) (removeDirectoryRecursive "build")
+  when (not cacheExisted) (removeDirectoryRecursive "cache")
+  exitWith exitCode
 
 loop :: Env.Repl -> InputT IO ExitCode
 loop environment = do
@@ -143,8 +108,6 @@ runCommand env command =
               InfoCRD -> (env, putStrLn crdInfo)
       lift $ sideEffects
       loop env'
-
---none = return ()
 
 parseCommand :: String -> Either ParseError Command
 parseCommand str = parse commands "" str
