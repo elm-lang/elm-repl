@@ -45,6 +45,7 @@ Executable elm-repl
                        mtl >= 2,
                        process,
                        parsec >= 3.0,
-                       filepath
+                       filepath,
+                       bytestring-trie
 
   ghc-options:         -fwarn-unused-imports
