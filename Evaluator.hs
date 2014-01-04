@@ -6,7 +6,6 @@ import qualified Data.ByteString.Char8 as BSC
 import qualified Data.ByteString       as BS
 import qualified Elm.Internal.Paths    as Elm
 import qualified Environment           as Env
-import qualified Data.Map              as Map
 
 import Control.Applicative ((<$>), (<*>))
 import Control.Exception
