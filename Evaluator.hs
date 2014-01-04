@@ -10,6 +10,8 @@ import qualified Environment           as Env
 import Control.Applicative ((<$>), (<*>))
 import Control.Exception
 import Control.Monad       (unless)
+import Control.Monad.RWS   (get, modify, MonadState)
+import Control.Monad.Trans (liftIO)
 import System.Directory    (removeFile)
 import System.Exit         (ExitCode(..))
 import System.FilePath     ((</>), replaceExtension)
@@ -17,11 +19,16 @@ import System.IO
 import System.IO.Error     (isDoesNotExistError)
 import System.Process
 
-runRepl :: String -> Env.Repl -> IO Env.Repl
-runRepl "" env = return env
-runRepl input oldEnv =
-  do writeFile tempElm $ Env.toElm newEnv
-     success <- runCmdWithCallback (Env.compilerPath newEnv) elmArgs $ \types -> do
+import Monad
+
+evalPrint :: String -> ReplM ()
+evalPrint input | all Char.isSpace input = return ()
+evalPrint input | otherwise =
+  do modify $ Env.insert input
+     env <- get
+     liftIO $ writeFile tempElm $ Env.toElm env
+     let elmArgs = Env.flags env ++ ["--make", "--only-js", "--print-types", tempElm]
+     success <- liftIO . runCmdWithCallback (Env.compilerPath env) elmArgs $ \types -> do
        reformatJS input tempJS
        runCmdWithCallback "node" nodeArgs $ \value' ->
            let value = BSC.init value'
@@ -32,16 +39,14 @@ runRepl input oldEnv =
                message = BS.concat [ if isTooLong then value' else value, tipe ]
            in  do unless (BSC.null value') $ BSC.hPutStrLn stdout message
                   return True
-     removeIfExists tempElm
-     return $ if success then newEnv else oldEnv
+     liftIO $ removeIfExists tempElm
+     return ()
   where
-    newEnv = Env.insert input oldEnv
 
     tempElm = "repl-temp-000.elm"
     tempJS  = "build" </> replaceExtension tempElm "js"
     
     nodeArgs = [tempJS]
-    elmArgs  = Env.flags newEnv ++ ["--make", "--only-js", "--print-types", tempElm]
 
 runCmdWithCallback :: FilePath -> [String] -> (BS.ByteString -> IO Bool) -> IO Bool
 runCmdWithCallback name args callback = do

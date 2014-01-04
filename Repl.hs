@@ -24,19 +24,18 @@ main = do
   settings     <- mkSettings
   putStrLn welcomeMessage
   let mt = Env.empty (Flags.compiler flags)
-  exitCode <- runReplM flags mt $ runInputT settings . withInterrupt . loop $ mt
+  exitCode <- runReplM flags mt . runInputT settings . withInterrupt $ repl
   when (not buildExisted) (removeDirectoryRecursive "build")
   when (not cacheExisted) (removeDirectoryRecursive "cache")
   exitWith exitCode
 
-loop :: Env.Repl -> InputT ReplM ExitCode
-loop env = do
+repl :: InputT ReplM ExitCode
+repl = do
   str' <- handleInterrupt (return . Just $ "") getInput
   case str' of
-    Just (':':command) -> lift   (Cmd.runCommand command) >>= kont
-    Just input         -> liftIO (Eval.runRepl input env)     >>= loop
+    Just (':':command) -> lift (Cmd.runCommand command) >> repl
+    Just input         -> lift (Eval.evalPrint input)   >> repl
     Nothing            -> return ExitSuccess
-  where kont = maybe (loop env) (liftIO . exitWith)
 
 getInput :: (MonadException m) => InputT m (Maybe String)
 getInput = go "> " ""
