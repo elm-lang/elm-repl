@@ -2,6 +2,7 @@
 module Environment where
 
 import Data.ByteString (ByteString)
+import Data.Monoid     ((<>))
 import qualified Data.ByteString.Char8 as BS
 import qualified Data.Char             as Char
 import qualified Data.List             as List
@@ -18,10 +19,13 @@ data Repl = Repl
 
 empty :: FilePath -> Repl
 empty compilerPath =
-    Repl compilerPath [] Trie.empty Trie.empty (Trie.singleton "t_s_o_l_" "t_s_o_l_ = ()")
+    Repl compilerPath [] Trie.empty Trie.empty (Trie.singleton firstVar (BS.unpack firstVar <> " = ()"))
 
-output :: ByteString
-output = "deltron3030"
+firstVar :: ByteString
+firstVar = "tsol"
+
+lastVar :: ByteString
+lastVar = "deltron3030"
 
 toElm :: Repl -> String
 toElm env = unlines $ "module Repl where" : decls
@@ -66,8 +70,8 @@ define :: ByteString -> String -> Repl -> Repl
 define name body env = env { defs = Trie.insert name body (defs env) }
 
 display :: String -> Repl -> Repl
-display = define output . format
-  where format body = (BS.unpack output) ++ " =" ++ concatMap ("\n  "++) (lines body)
+display = define lastVar . format
+  where format body = (BS.unpack lastVar) ++ " =" ++ concatMap ("\n  "++) (lines body)
 
 noDisplay :: Repl -> Repl
-noDisplay env = env { defs = Trie.delete output (defs env) }
+noDisplay env = env { defs = Trie.delete lastVar (defs env) }

@@ -83,13 +83,13 @@ reformatJS input tempJS =
           , "var window = window || {};"
           , "var context = { inputs:[], addListener:function(){}, node:{} };\n"
           , "var repl = Elm.Repl.make(context);\n"
-          , "if ('", Env.output, "' in repl)\n"
-          , "  console.log(context.Native.Show.values.show(repl.", Env.output, "));" ]
+          , "if ('", Env.lastVar, "' in repl)\n"
+          , "  console.log(context.Native.Show.values.show(repl.", Env.lastVar, "));" ]
 
 scrapeOutputType :: BS.ByteString -> BS.ByteString
 scrapeOutputType = dropName . squashSpace . takeType . dropWhile (not . isOut) . BSC.lines
-  where isOut    = BS.isPrefixOf Env.output
-        dropName = BS.drop $ BSC.length Env.output
+  where isOut    = BS.isPrefixOf Env.lastVar
+        dropName = BS.drop $ BSC.length Env.lastVar
         takeType (n:rest) = n : takeWhile isMoreType rest
         isMoreType = (&&) <$> not . BS.null <*> (Char.isSpace . BSC.head)
         squashSpace = BSC.unwords . BSC.words . BSC.unwords

@@ -12,6 +12,7 @@ import qualified System.Console.CmdArgs as CmdArgs
 import Monad
 
 import qualified Command     as Cmd
+import qualified Completion
 import qualified Evaluator   as Eval
 import qualified Environment as Env
 import qualified Flags
@@ -62,8 +63,10 @@ elmdir = do
   createDirectoryIfMissing True dir
   return dir
 
-mkSettings :: (MonadIO m) => IO (Settings m)
+mkSettings :: IO (Settings ReplM)
 mkSettings = do
   historyFile <- (</> "history") `fmap` elmdir
-  return $ defaultSettings { historyFile = Just historyFile }
-
+  return $ Settings { historyFile    = Just historyFile
+                    , autoAddHistory = True
+                    , complete       = Completion.complete
+                    }

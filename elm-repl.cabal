@@ -28,6 +28,7 @@ source-repository head
 Executable elm-repl
   Main-is:             Repl.hs
   other-modules:       Command,
+                       Completion,
                        Environment,
                        Evaluator,
                        Flags,
