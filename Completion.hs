@@ -1,6 +1,7 @@
 module Completion (complete)
        where
 
+import Data.Functor        ((<$>))
 import Data.Trie           (Trie)
 import Control.Monad.State (get)
 import System.Console.Haskeline.Completion
@@ -12,13 +13,12 @@ import Monad (ReplM)
 
 import qualified Environment as Env
 
-complete :: CompletionFunc ReplM
-complete = completeWord Nothing " \t" lookupCompletions
+complete, completeIdentifier :: CompletionFunc ReplM
+complete = completeQuotedWord Nothing "\"\'" (const $ return [] ) completeIdentifier
+completeIdentifier = completeWord Nothing " \t" lookupCompletions
 
 lookupCompletions :: String -> ReplM [Completion]
-lookupCompletions s = do
-  env <- get
-  return $ completions s . removeReserveds . Env.defs $ env
+lookupCompletions s = completions s . removeReserveds . Env.defs <$> get
     where removeReserveds = Trie.delete Env.firstVar . Trie.delete Env.lastVar
 
 completions :: String -> Trie a  -> [Completion]
