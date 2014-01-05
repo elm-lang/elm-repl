@@ -40,10 +40,10 @@ handleCommand command =
       InfoFlags -> display flagsInfo
       ListFlags -> display . unlines . Env.flags =<< get
 
-      AddFlag flag -> modifyIfPresent flag "Added " "Flag already added!" $ \env ->
+      AddFlag flag -> modifyIfPresent True flag "Added " "Flag already added!" $ \env ->
         env { Env.flags = Env.flags env ++ [flag] }
 
-      RemoveFlag flag -> modifyIfPresent flag "Removed flag " "No such flag." $ \env ->
+      RemoveFlag flag -> modifyIfPresent False flag "Removed flag " "No such flag." $ \env ->
         env {Env.flags = List.delete flag $ Env.flags env}
 
       Reset -> modifyAlways "Environment Reset" (Env.empty . Env.compilerPath)
@@ -51,9 +51,9 @@ handleCommand command =
         env {Env.flags = []}
 
   where display msg = Nothing <$ (liftIO . putStrLn $ msg)
-        modifyIfPresent flag msgSuc msgFail mod = do
+        modifyIfPresent b flag msgSuc msgFail mod = do
           env <- get
-          if flag `elem` Env.flags env
+          if (not b) `xor` (flag `elem` Env.flags env)
             then display msgFail
             else Nothing <$ do
           liftIO . putStrLn $ msgSuc ++ flag
@@ -61,6 +61,10 @@ handleCommand command =
         modifyAlways msg mod = Nothing <$ do
           liftIO . putStrLn $ msg
           modify mod
+
+xor :: Bool -> Bool -> Bool
+xor True  = not
+xor False = id
 
 commands :: Parsec String () Command
 commands = choice (flags : basics)
