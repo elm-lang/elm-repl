@@ -1,7 +1,7 @@
 module Command (runCommand)
        where
 
-import Control.Applicative      ((<$>), (<$))
+import Data.Functor             ((<$>), (<$))
 import Control.Monad.Trans      (liftIO)
 import Control.Monad.State      (get, modify)
 import System.Exit              (ExitCode, exitSuccess)
@@ -74,22 +74,22 @@ flags :: Parsec String () Command
 flags = do
   string "flags"
   many space
-  choice [ do string "add" >> many1 space >> srcDir
-         , do string "remove" >> many1 space
-              n <- many1 digit
-              return $ RemoveFlag (read n)
-         , do string "list"
-              return ListFlags
-         , do string "clear"
-              return ClearFlags
+  choice [ srcDirFlag "add"    AddFlag
+         , srcDirFlag "remove" RemoveFlag
+         , ListFlags  <$ string "list"
+         , ClearFlags <$ string "clear"
          , return InfoFlags
          ]
+    where srcDirFlag name ctor = do
+            string name
+            many1 space
+            ctor <$> srcDir
 
-srcDir :: Parsec String () Command
+srcDir :: Parsec String () String
 srcDir = do
   string "--src-dir="
   dir <- manyTill anyChar (choice [ space >> return (), eof ])
-  return $ AddFlag $ "--src-dir=" ++ dir
+  return $ "--src-dir=" ++ dir
 
 flagsInfo :: String
 flagsInfo = "Usage: flags [operation]\n\
