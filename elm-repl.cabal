@@ -18,7 +18,7 @@ Copyright:           Copyright: (c) 2011-2013 Evan Czaplicki
 Category:            Tool
 
 Build-type:          Simple
-
+Extra-source-files:  changelog.txt
 Cabal-version:       >=1.8
 
 source-repository head
@@ -36,7 +36,7 @@ Executable elm-repl
                        cmdargs,
                        containers >= 0.3,
                        directory,
-                       Elm >= 0.10.0.2,
+                       Elm >= 0.10.1,
                        filepath,
                        haskeline,
                        transformers >= 0.2,
