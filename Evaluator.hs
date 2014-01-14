@@ -26,8 +26,8 @@ evalPrint input | otherwise =
      env <- get
      liftIO $ writeFile tempElm $ Env.toElm env
      let elmArgs = Env.flags env ++ ["--make", "--only-js", "--print-types", tempElm]
-     success <- liftIO . runCmdWithCallback (Env.compilerPath env) elmArgs $ \types -> do
-       reformatJS input tempJS
+     liftIO . runCmdWithCallback (Env.compilerPath env) elmArgs $ \types -> do
+       reformatJS tempJS
        runCmdWithCallback "node" nodeArgs $ \value' ->
            let value = BSC.init value'
                tipe = scrapeOutputType types
@@ -35,8 +35,7 @@ evalPrint input | otherwise =
                            BSC.isInfixOf "\n" tipe ||
                            BSC.length value + BSC.length tipe > 80   
                message = BS.concat [ if isTooLong then value' else value, tipe ]
-           in  do unless (BSC.null value') $ BSC.hPutStrLn stdout message
-                  return True
+           in  unless (BSC.null value') $ BSC.hPutStrLn stdout message
      liftIO $ removeIfExists tempElm
      return ()
   where
@@ -46,7 +45,7 @@ evalPrint input | otherwise =
     
     nodeArgs = [tempJS]
 
-runCmdWithCallback :: FilePath -> [String] -> (BS.ByteString -> IO Bool) -> IO Bool
+runCmdWithCallback :: FilePath -> [String] -> (BS.ByteString -> IO ()) -> IO ()
 runCmdWithCallback name args callback = do
   (_, stdout, stderr, handle') <- createProcess (proc name args) { std_out = CreatePipe
                                                                  , std_err = CreatePipe}
@@ -60,14 +59,14 @@ runCmdWithCallback name args callback = do
       o <- BSC.hGetContents out
       failure (BS.concat [o,e])
     (_, _, _) -> failure "Unknown error!"
- where failure message = BSC.hPutStrLn stderr message >> return False
+ where failure message = BSC.hPutStrLn stderr message
        missingExe = BSC.pack $ unlines $
                     [ "Error: '" ++ name ++ "' command not found."
                     , "  Do you have it installed?"
                     , "  Can it be run from anywhere? I.e. is it on your PATH?" ]
 
-reformatJS :: String -> String -> IO ()
-reformatJS input tempJS =
+reformatJS :: String -> IO ()
+reformatJS tempJS =
   do rts <- BS.readFile Elm.runtime
      src <- BS.readFile tempJS
      BS.length src `seq` BS.writeFile tempJS (BS.concat [rts,src,out])
@@ -89,6 +88,7 @@ scrapeOutputType = dropName . squashSpace . takeType . dropWhile (not . isOut) .
   where isOut    = (||) <$> (BS.isPrefixOf Env.lastVar) <*> (BS.isPrefixOf (BS.append "Repl." Env.lastVar))
         dropName = BSC.cons ' ' . BSC.dropWhile (/= ':')
         takeType (n:rest) = n : takeWhile isMoreType rest
+        takeType []       = error "Internal error in elm-repl (takeType): Please report this bug to https://github.com/evancz/elm-repl/issues/"
         isMoreType = (&&) <$> not . BS.null <*> (Char.isSpace . BSC.head)
         squashSpace = BSC.unwords . BSC.words . BSC.unwords
 

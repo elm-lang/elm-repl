@@ -49,4 +49,4 @@ Executable elm-repl
                        filepath,
                        bytestring-trie
 
-  ghc-options:         -fwarn-unused-imports
+  ghc-options:         -W
