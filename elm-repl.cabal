@@ -27,9 +27,12 @@ source-repository head
 
 Executable elm-repl
   Main-is:             Repl.hs
-  other-modules:       Environment,
+  other-modules:       Command,
+                       Completion,
+                       Environment,
                        Evaluator,
-                       Flags
+                       Flags,
+                       Monad
 
   Build-depends:       base >=4.2 && <5,
                        bytestring,
@@ -43,4 +46,7 @@ Executable elm-repl
                        mtl >= 2,
                        process,
                        parsec >= 3.0,
-                       filepath
+                       filepath,
+                       bytestring-trie
+
+  ghc-options:         -fwarn-unused-imports

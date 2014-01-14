@@ -14,7 +14,7 @@ data Flags = Flags
              
 flags = Flags
   { compiler = "elm" &= typFile
-              &= help "Provide a path to a specific Elm compiler."
+                     &= help "Provide a path to a specific Elm compiler."
   } &= help "Read-eval-print-loop (REPL) for digging deep into Elm projects.\n\
             \More info at <https://github.com/evancz/elm-repl#elm-repl>"
     &= helpArg [explicit, name "help", name "h"]
