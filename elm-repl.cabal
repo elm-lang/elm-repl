@@ -18,7 +18,7 @@ Copyright:           Copyright: (c) 2011-2013 Evan Czaplicki
 Category:            Tool
 
 Build-type:          Simple
-
+Extra-source-files:  changelog.txt
 Cabal-version:       >=1.8
 
 source-repository head
