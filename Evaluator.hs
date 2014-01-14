@@ -8,15 +8,13 @@ import qualified Elm.Internal.Paths    as Elm
 import qualified Environment           as Env
 
 import Control.Applicative ((<$>), (<*>))
-import Control.Exception
 import Control.Monad       (unless)
 import Control.Monad.RWS   (get, modify, MonadState)
 import Control.Monad.Trans (liftIO)
-import System.Directory    (removeFile)
+import System.Directory    (doesFileExist, removeFile)
 import System.Exit         (ExitCode(..))
 import System.FilePath     ((</>), replaceExtension)
 import System.IO
-import System.IO.Error     (isDoesNotExistError)
 import System.Process
 
 import Monad
@@ -88,8 +86,8 @@ reformatJS input tempJS =
 
 scrapeOutputType :: BS.ByteString -> BS.ByteString
 scrapeOutputType = dropName . squashSpace . takeType . dropWhile (not . isOut) . BSC.lines
-  where isOut    = BS.isPrefixOf Env.lastVar
-        dropName = BS.drop $ BSC.length Env.lastVar
+  where isOut    = (||) <$> (BS.isPrefixOf Env.lastVar) <*> (BS.isPrefixOf (BS.append "Repl." Env.lastVar))
+        dropName = BSC.cons ' ' . BSC.dropWhile (/= ':')
         takeType (n:rest) = n : takeWhile isMoreType rest
         isMoreType = (&&) <$> not . BS.null <*> (Char.isSpace . BSC.head)
         squashSpace = BSC.unwords . BSC.words . BSC.unwords
@@ -101,7 +99,8 @@ freshLine str | BS.null rest' = (line,"")
     (line,rest') = BSC.break (=='\n') str
 
 removeIfExists :: FilePath -> IO ()
-removeIfExists fileName = removeFile fileName `Control.Exception.catch` handleExists
-  where handleExists e
-          | isDoesNotExistError e = return ()
-          | otherwise = throwIO e
+removeIfExists fileName = do
+  exists <- doesFileExist fileName
+  if exists
+    then removeFile fileName
+    else return ()
