@@ -26,6 +26,7 @@ source-repository head
   location: git://github.com/evancz/elm-repl.git
 
 Executable elm-repl
+  Hs-Source-Dirs:      src
   Main-is:             Repl.hs
   other-modules:       Command,
                        Completion,
