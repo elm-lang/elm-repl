@@ -1,54 +1,43 @@
-module Command (runCommand)
-       where
+module Command where
 
 import Data.Functor             ((<$>), (<$))
 import Control.Monad.Trans      (liftIO)
 import Control.Monad.State      (get, modify)
 import System.Exit              (ExitCode, exitSuccess)
-import Text.Parsec hiding (getInput)
 
 import qualified Data.List   as List
 
 import qualified Environment as Env
-import Monad
+import Monad (ReplM)
 
 data Command
-    = AddFlag String
-    | RemoveFlag String
-    | ListFlags
-    | ClearFlags
-    | InfoFlags
-    | Help
-    | Exit
-    | Reset
-    deriving Show
+  = AddFlag String
+  | RemoveFlag String
+  | ListFlags
+  | ClearFlags
+  | InfoFlags
+  | Help
+  | Exit
+  | Reset
+  deriving (Show, Eq)
 
-runCommand :: String -> ReplM (Maybe ExitCode)
-runCommand raw =
-  case parse commands "" raw of
-    Right command -> handleCommand command
-    Left err ->
-      Nothing <$ (liftIO . putStrLn $
-                  "Could not parse command '" ++ raw ++ "':\n" ++ show err)
+run :: Command -> ReplM (Maybe ExitCode)
+run cmd =
+  case cmd of
+    Exit      -> Just <$> liftIO exitSuccess
+    Help      -> display helpInfo
+    InfoFlags -> display flagsInfo
+    ListFlags -> display . unlines . Env.flags =<< get
 
-
-handleCommand :: Command -> ReplM (Maybe ExitCode)
-handleCommand command =
-    case command of
-      Exit      -> Just <$> liftIO exitSuccess
-      Help      -> display helpInfo
-      InfoFlags -> display flagsInfo
-      ListFlags -> display . unlines . Env.flags =<< get
-
-      AddFlag flag -> modifyIfPresent True flag "Added " "Flag already added!" $ \env ->
+    AddFlag flag -> modifyIfPresent True flag "Added " "Flag already added!" $ \env ->
         env { Env.flags = Env.flags env ++ [flag] }
 
-      RemoveFlag flag -> modifyIfPresent False flag "Removed flag " "No such flag." $ \env ->
-        env {Env.flags = List.delete flag $ Env.flags env}
+    RemoveFlag flag -> modifyIfPresent False flag "Removed flag " "No such flag." $ \env ->
+      env {Env.flags = List.delete flag $ Env.flags env}
 
-      Reset -> modifyAlways "Environment Reset" (Env.empty . Env.compilerPath)
-      ClearFlags -> modifyAlways "All flags cleared" $ \env ->
-        env {Env.flags = []}
+    Reset -> modifyAlways "Environment Reset" (Env.empty . Env.compilerPath)
+    ClearFlags -> modifyAlways "All flags cleared" $ \env ->
+      env {Env.flags = []}
 
   where display msg = Nothing <$ (liftIO . putStrLn $ msg)
         modifyIfPresent b flag msgSuc msgFail mod = do
@@ -65,35 +54,6 @@ handleCommand command =
 xor :: Bool -> Bool -> Bool
 xor True  = not
 xor False = id
-
-commands :: Parsec String () Command
-commands = choice (flags : basics)
-    where
-      basics = map basicCommand [ ("exit",Exit), ("reset",Reset), ("help",Help) ]
-
-      basicCommand (name,command) =
-          string name >> spaces >> eof >> return command
-
-flags :: Parsec String () Command
-flags = do
-  string "flags"
-  many space
-  choice [ srcDirFlag "add"    AddFlag
-         , srcDirFlag "remove" RemoveFlag
-         , ListFlags  <$ string "list"
-         , ClearFlags <$ string "clear"
-         , return InfoFlags
-         ]
-    where srcDirFlag name ctor = do
-            string name
-            many1 space
-            ctor <$> srcDir
-
-srcDir :: Parsec String () String
-srcDir = do
-  string "--src-dir="
-  dir <- manyTill anyChar (choice [ space >> return (), eof ])
-  return $ "--src-dir=" ++ dir
 
 flagsInfo :: String
 flagsInfo = "Usage: flags [operation]\n\

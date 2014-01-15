@@ -2,7 +2,8 @@ module Main where
 
 import Control.Monad
 import Control.Monad.Trans
-import System.Console.Haskeline
+import Data.Functor ((<$))
+import System.Console.Haskeline hiding (handle)
 import System.Directory
 import System.Exit
 import System.FilePath ((</>))
@@ -11,11 +12,13 @@ import qualified System.Console.CmdArgs as CmdArgs
 
 import Monad
 
+import qualified Action      as Act
 import qualified Command     as Cmd
 import qualified Completion
 import qualified Evaluator   as Eval
 import qualified Environment as Env
 import qualified Flags
+import qualified Parse
 
 main :: IO ()
 main = do
@@ -34,9 +37,19 @@ repl :: InputT ReplM ExitCode
 repl = do
   str' <- handleInterrupt (return . Just $ "") getInput
   case str' of
-    Just (':':command) -> lift (Cmd.runCommand command) >> repl
-    Just input         -> lift (Eval.evalPrint input)   >> repl
-    Nothing            -> return ExitSuccess
+    Nothing -> return ExitSuccess
+    Just str -> case Parse.input str of
+      Left err -> (liftIO $ putStrLn err) >> repl
+      Right act -> do
+        m <- lift $ handle act
+        case m of
+          Just exit -> return exit
+          Nothing   -> repl
+
+handle :: Act.Action -> ReplM (Maybe ExitCode)
+handle (Act.Command cmd) = Cmd.run cmd
+handle (Act.Code src)    = Nothing <$ Eval.evalPrint src
+handle (Act.Skip)        = return Nothing
 
 getInput :: (MonadException m) => InputT m (Maybe String)
 getInput = go "> " ""
