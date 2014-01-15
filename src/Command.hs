@@ -10,16 +10,15 @@ import qualified Data.List   as List
 import qualified Environment as Env
 import Monad (ReplM)
 
-data Command
-  = AddFlag String
-  | RemoveFlag String
-  | ListFlags
-  | ClearFlags
-  | InfoFlags
-  | Help
-  | Exit
-  | Reset
-  deriving (Show, Eq)
+data Command = AddFlag String
+             | RemoveFlag String
+             | ListFlags
+             | ClearFlags
+             | InfoFlags
+             | Help
+             | Exit
+             | Reset
+             deriving (Show, Eq)
 
 run :: Command -> ReplM (Maybe ExitCode)
 run cmd =

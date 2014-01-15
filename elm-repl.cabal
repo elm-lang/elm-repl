@@ -76,3 +76,4 @@ Test-Suite test
                        filepath,
                        bytestring-trie
                        
+  ghc-options:         -W
