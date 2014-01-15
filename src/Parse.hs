@@ -7,6 +7,7 @@ import Action
 import Command as Cmd
 
 type Parser = Parsec String ()
+
 input :: String -> Either String Action
 input = either (Left . show) Right . parse result ""
 
@@ -14,8 +15,11 @@ result :: Parser Action
 result = do
   spaces
   (Skip <$ eof)
-    <|> (satisfy (/= ':') >> Code <$> many anyChar)
-    <|> (char ':' >> Command <$> command)
+    <|> do
+    c <- anyChar
+    if c == ':'
+      then Command <$> command
+      else Code . (c:) <$> many anyChar
 
 command :: Parser Command
 command = choice (flags : basics)

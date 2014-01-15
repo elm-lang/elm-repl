@@ -16,9 +16,14 @@ main = defaultMain tests
 tests :: [Test]
 tests = [
   testGroup "Command parse tests" [
-     testCase ":help parses" $ actionParses (Action.Command Cmd.Help) ":help"
+       testCase ":help parses"  $ cmdParses Cmd.Help ":help "
+  ]
+  , testGroup "Code parse tests"  [
+     testCase "number parses"   $ codeParses "3"
      ]
   ]
+  where codeParses src = actionParses (Action.Code src) src
+        cmdParses cmd src = actionParses (Action.Command cmd) src
 
 actionParses v s = case Parse.input s of
   Left err -> assertFailure err
