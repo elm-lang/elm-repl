@@ -1,10 +1,13 @@
 module Main where
 
 import qualified Data.Char as Char
+import qualified Data.List as List
 import Test.Framework
 import Test.Framework.Providers.HUnit (testCase)
-import qualified Test.HUnit.Base as HUnit
+import Test.Framework.Providers.QuickCheck2 (testProperty)
 import Test.HUnit ((@=?), assertFailure)
+import qualified Test.HUnit.Base as HUnit
+import Test.QuickCheck
 
 import qualified Action
 import qualified Command as Cmd
@@ -29,6 +32,7 @@ tests = [
        , testCase ":flags remove source parses" $
          cmdParses (Cmd.RemoveFlag "--src-dir=bleh") ":flags remove --src-dir=bleh"
        ]
+     , testProperty "bad :commands don't work" badCommandNoParse
      ]
   , testGroup "Code parse tests"  [
      testCase "number parses"   $ codeParses "3"
@@ -36,9 +40,11 @@ tests = [
      , testCase "data def parses after whitespace"   $ codeParses " data Baz = B { }"
      , testCase "number parses after newlines" $ codeParses "\n\n3"
      ]
-  , testGroup "Empty parse tests" [
+  , testGroup "Whitespace parse tests" [
      testCase "empty is skipped" $ skipped ""
      , testCase "newlines are skipped" $ skipped "\n\n\n"
+     , testProperty "skip all whitespace" $ skipAllSpace
+     , testProperty "never skip non-whitespace" dontSkipNonSpace
      ]
   ]
   where codeParses src = actionParses (Action.Code . trimSpace $ src) src
@@ -51,3 +57,17 @@ actionParses :: Action.Action -> String -> HUnit.Assertion
 actionParses v s = case Parse.input s of
   Left err -> assertFailure err
   Right act -> v @=? act
+
+badCommandNoParse :: Property
+badCommandNoParse = forAll nonFlags noParseFlag
+  where nonFlags = (arbitrary `suchThat` notFlag)
+        noParseFlag s = either (const True) (const False) $ Parse.input (':':s)
+        notFlag s = not . any (s `List.isPrefixOf`) $ ["help", "reset", "flags", "exit"]
+
+skipAllSpace :: Property
+skipAllSpace = forAll spaces $ either (const False) (==Action.Skip) . Parse.input
+  where spaces = listOf . elements . filter Char.isSpace $ [toEnum 0..]
+
+dontSkipNonSpace :: Property
+dontSkipNonSpace = forAll notAllSpace $ either (const True) (/= Action.Skip) . Parse.input
+  where notAllSpace = arbitrary `suchThat` (not . all Char.isSpace)

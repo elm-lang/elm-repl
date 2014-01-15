@@ -60,7 +60,9 @@ Test-Suite test
   Main-is:             Main.hs
   build-depends:       test-framework,
                        test-framework-hunit,
+                       test-framework-quickcheck2,
                        HUnit,
+                       QuickCheck,
                        base >=4.2 && <5,
                        bytestring,
                        cmdargs,
