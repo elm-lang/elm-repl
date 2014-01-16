@@ -1,3 +1,8 @@
+Upcoming Release
+================
+Features:
+  * Basic auto-completion
+
 Release 0.2
 ===========
 Features:
