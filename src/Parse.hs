@@ -10,8 +10,10 @@ import Action
 
 type Parser = Parsec String ()
 
-input :: String -> Either String Action
-input = either (Left . show) Right . parse result ""
+input :: String -> Action
+input inp = case parse result "" inp of
+  Left err  -> Command . Help . Just . show $ err
+  Right act -> act
 
 result :: Parser Action
 result = do
@@ -24,27 +26,30 @@ result = do
       else Code . mkTerm <$> many anyChar
 
 command :: Parser Command
-command = choice (flags : basics)
+command = choice . map try $ (flags : basics)
     where
-      basics = map basicCommand [ ("exit",Exit), ("reset",Reset), ("help",Help) ]
+      basics = map basicCommand [ ("exit",Exit), ("reset",Reset), ("help",Help Nothing) ]
 
-      basicCommand (name,command) =
-          string name >> spaces >> eof >> return command
+      basicCommand (name, cmd) =
+          string name >> spaces >> eof >> return cmd
 
 flags :: Parser Command
 flags = do
-  string "flags"
-  many space
-  choice [ srcDirFlag "add"    AddFlag
-         , srcDirFlag "remove" RemoveFlag
-         , ListFlags  <$ string "list"
-         , ClearFlags <$ string "clear"
-         , return InfoFlags
-         ]
-    where srcDirFlag name ctor = do
-            string name
-            many1 space
-            ctor <$> srcDir
+  string "flags" >> notFollowedBy notSpace
+  modifier <|> return (InfoFlags Nothing)
+  where modifier = do
+          many1 space
+          flag <- many1 notSpace
+          case flag of
+            "add"    -> srcDirFlag AddFlag
+            "remove" -> srcDirFlag RemoveFlag
+            "list"   -> return ListFlags
+            "clear"  -> return ClearFlags
+            _        -> return $ InfoFlags . Just $ flag
+        srcDirFlag ctor = do
+          many1 space
+          ctor <$> srcDir
+        notSpace = satisfy $ not . Char.isSpace
 
 srcDir :: Parser String
 srcDir = do
@@ -59,9 +64,9 @@ mkCode :: String -> Maybe Def
 mkCode src
   | List.isPrefixOf "import " src = 
     let name = getFirstCap . words $ src
-        getFirstCap (token@(c:_):rest) = if Char.isUpper c
-                                           then token
-                                           else getFirstCap rest
+        getFirstCap (tok@(c:_):rest) = if Char.isUpper c
+                                       then tok
+                                       else getFirstCap rest
         getFirstCap _ = src
     in Just $ Import name
 

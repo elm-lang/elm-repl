@@ -9,8 +9,9 @@ data Command = AddFlag String
              | RemoveFlag String
              | ListFlags
              | ClearFlags
-             | InfoFlags
-             | Help
+               -- Just if this was triggered by an error
+             | InfoFlags (Maybe String)
+             | Help (Maybe String)
              | Exit
              | Reset
              deriving (Show, Eq)

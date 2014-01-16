@@ -29,8 +29,8 @@ main = do
   putStrLn welcomeMessage
   let mt = Env.empty (Flags.compiler flags)
   exitCode <- runReplM flags mt . runInputT settings . withInterrupt $ repl
-  when (not buildExisted) (removeDirectoryRecursive "build")
-  when (not cacheExisted) (removeDirectoryRecursive "cache")
+  unless buildExisted (removeDirectoryRecursive "build")
+  unless cacheExisted (removeDirectoryRecursive "cache")
   exitWith exitCode
 
 repl :: InputT ReplM ExitCode
@@ -38,13 +38,12 @@ repl = do
   str' <- handleInterrupt (return . Just $ "") getInput
   case str' of
     Nothing -> return ExitSuccess
-    Just str -> case Parse.input str of
-      Left err -> (liftIO $ putStrLn err) >> repl
-      Right act -> do
-        m <- lift $ handle act
-        case m of
-          Just exit -> return exit
-          Nothing   -> repl
+    Just str -> do
+      let act = Parse.input str
+      m <- lift $ handle act
+      case m of
+        Just exit -> return exit
+        Nothing   -> repl
 
 handle :: Act.Action -> ReplM (Maybe ExitCode)
 handle (Act.Command cmd) = Cmd.run cmd

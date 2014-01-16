@@ -14,10 +14,10 @@ import Monad (ReplM)
 run :: Command -> ReplM (Maybe ExitCode)
 run cmd =
   case cmd of
-    Exit      -> Just <$> liftIO exitSuccess
-    Help      -> display helpInfo
-    InfoFlags -> display flagsInfo
-    ListFlags -> display . unlines . Env.flags =<< get
+    Exit         -> Just <$> liftIO exitSuccess
+    Help m       -> displayErr "Bad command: " m >> display helpInfo
+    InfoFlags m  -> displayErr "Bad flag: " m    >> display flagsInfo
+    ListFlags    -> display . unlines . Env.flags =<< get
 
     AddFlag flag -> modifyIfPresent True flag "Added " "Flag already added!" $ \env ->
         env { Env.flags = Env.flags env ++ [flag] }
@@ -30,9 +30,12 @@ run cmd =
       env {Env.flags = []}
 
   where display msg = Nothing <$ (liftIO . putStrLn $ msg)
+        displayErr msg m = case m of
+          Nothing -> return ()
+          Just err -> liftIO . putStrLn $ (msg ++ err)
         modifyIfPresent b flag msgSuc msgFail mod = do
           env <- get
-          if (not b) `xor` (flag `elem` Env.flags env)
+          if not b `xor` (flag `elem` Env.flags env)
             then display msgFail
             else Nothing <$ do
           liftIO . putStrLn $ msgSuc ++ flag

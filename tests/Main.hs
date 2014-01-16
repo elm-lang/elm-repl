@@ -5,7 +5,7 @@ import qualified Data.List as List
 import Test.Framework
 import Test.Framework.Providers.HUnit (testCase)
 import Test.Framework.Providers.QuickCheck2 (testProperty)
-import Test.HUnit ((@=?), assertFailure)
+import Test.HUnit ((@=?))
 import qualified Test.HUnit.Base as HUnit
 import Test.QuickCheck
 
@@ -18,11 +18,11 @@ main = defaultMain tests
 tests :: [Test]
 tests = [
   testGroup "Command parse tests" [
-     testCase ":help parses"                      $ cmdParses Help ":help"
+     testCase ":help parses"                      $ cmdParses (Help Nothing) ":help"
      , testCase ":reset parses after whitespace"  $ cmdParses Reset "  :reset"
      , testCase ":exit parses before whitespace"  $ cmdParses Exit ":exit   "
      , testGroup ":flags parse tests" [
-       testCase ":flags parses with Info" $ cmdParses InfoFlags ":flags"
+       testCase ":flags parses with Info" $ cmdParses (InfoFlags Nothing) ":flags"
        , testCase ":flags list parses"    $ cmdParses ListFlags ":flags list"
        , testCase ":flags clear parses w/ whitespace between" $
            cmdParses ClearFlags ":flags     clear"
@@ -31,7 +31,7 @@ tests = [
        , testCase ":flags remove source parses" $
            cmdParses (RemoveFlag "--src-dir=bleh") ":flags remove --src-dir=bleh"
        ]
-     , testProperty "bad :commands don't work" badCommandNoParse
+     , testProperty "bad :commands trigger help" badCommandHelp
      ]
   , testGroup "Code parse tests"  [
      testCase "number parses" $ codeParses Nothing "3"
@@ -53,21 +53,28 @@ tests = [
         trimSpace = dropWhile Char.isSpace
 
 actionParses :: Action.Action -> String -> HUnit.Assertion
-actionParses v s = case Parse.input s of
-  Left err -> assertFailure err
-  Right act -> v @=? act
+actionParses v s = v @=? Parse.input s
 
-badCommandNoParse :: Property
-badCommandNoParse = forAll nonFlags noParseFlag
-  where nonFlags = arbitrary `suchThat` notFlag
-        noParseFlag s = either (const True) (const False) $ Parse.input (':':s)
+badCommandHelp :: Property
+badCommandHelp = forAll nonFlags helpParses
+  where nonFlags = oneof [ arbitrary `suchThat` notFlag
+                         , badFlag
+                         ]
+        helpParses s = case Parse.input (':':s) of
+          Command (Help (Just _)) -> True
+          _             -> False
         -- | TODO: things like help3
-        notFlag s = not . any (s `List.isPrefixOf`) $ ["help", "reset", "flags", "exit"]
+        notFlag s = not . any (s `List.isPrefixOf`) $ flags
+        badFlag = do
+          flag <- elements flags
+          c <- arbitrary `suchThat` (not . Char.isSpace)
+          return $ flag ++ [c]
+        flags = ["help", "reset", "flags", "exit"]
 
 skipAllSpace :: Property
-skipAllSpace = forAll spaces $ either (const False) (==Action.Skip) . Parse.input
+skipAllSpace = forAll spaces $ (==Action.Skip) . Parse.input
   where spaces = listOf . elements . filter Char.isSpace $ [toEnum 0..]
 
 dontSkipNonSpace :: Property
-dontSkipNonSpace = forAll notAllSpace $ either (const True) (/= Action.Skip) . Parse.input
+dontSkipNonSpace = forAll notAllSpace $ (/= Action.Skip) . Parse.input
   where notAllSpace = arbitrary `suchThat` (not . all Char.isSpace)
