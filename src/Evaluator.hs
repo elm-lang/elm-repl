@@ -18,11 +18,11 @@ import System.IO
 import System.Process
 
 import Monad
+import Action
 
-evalPrint :: String -> ReplM ()
-evalPrint input | all Char.isSpace input = return ()
-evalPrint input | otherwise =
-  do modify $ Env.insert input
+evalPrint :: Term -> ReplM ()
+evalPrint term =
+  do modify $ Env.insert term 
      env <- get
      liftIO $ writeFile tempElm $ Env.toElm env
      let elmArgs = Env.flags env ++ ["--make", "--only-js", "--print-types", tempElm]

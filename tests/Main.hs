@@ -9,8 +9,7 @@ import Test.HUnit ((@=?), assertFailure)
 import qualified Test.HUnit.Base as HUnit
 import Test.QuickCheck
 
-import qualified Action
-import qualified Command as Cmd
+import Action
 import qualified Parse
 
 main :: IO ()
@@ -19,26 +18,27 @@ main = defaultMain tests
 tests :: [Test]
 tests = [
   testGroup "Command parse tests" [
-     testCase ":help parses"                      $ cmdParses Cmd.Help ":help"
-     , testCase ":reset parses after whitespace"  $ cmdParses Cmd.Reset "  :reset"
-     , testCase ":exit parses before whitespace"  $ cmdParses Cmd.Exit ":exit   "
+     testCase ":help parses"                      $ cmdParses Help ":help"
+     , testCase ":reset parses after whitespace"  $ cmdParses Reset "  :reset"
+     , testCase ":exit parses before whitespace"  $ cmdParses Exit ":exit   "
      , testGroup ":flags parse tests" [
-       testCase ":flags parses with Info" $ cmdParses Cmd.InfoFlags ":flags"
-       , testCase ":flags list parses"    $ cmdParses Cmd.ListFlags ":flags list"
+       testCase ":flags parses with Info" $ cmdParses InfoFlags ":flags"
+       , testCase ":flags list parses"    $ cmdParses ListFlags ":flags list"
        , testCase ":flags clear parses w/ whitespace between" $
-           cmdParses Cmd.ClearFlags ":flags     clear"
+           cmdParses ClearFlags ":flags     clear"
        , testCase ":flags add source parses" $
-           cmdParses (Cmd.AddFlag "--src-dir=\"\"") ":flags add --src-dir=\"\""
+           cmdParses (AddFlag "--src-dir=\"\"") ":flags add --src-dir=\"\""
        , testCase ":flags remove source parses" $
-           cmdParses (Cmd.RemoveFlag "--src-dir=bleh") ":flags remove --src-dir=bleh"
+           cmdParses (RemoveFlag "--src-dir=bleh") ":flags remove --src-dir=bleh"
        ]
      , testProperty "bad :commands don't work" badCommandNoParse
      ]
   , testGroup "Code parse tests"  [
-     testCase "number parses"                       $ codeParses "3"
-     , testCase "type def parses before whitespace" $ codeParses "type Foo = Bar"
-     , testCase "data def parses after whitespace"  $ codeParses " data Baz = B { }"
-     , testCase "number parses after newlines"      $ codeParses "\n\n3"
+     testCase "number parses" $ codeParses Nothing "3"
+     , testCase "number parses after newlines" $ codeParses Nothing "\n\n3"
+     , testCase "data def parses"  $ codeParses (Just $ DataDef "Baz")  "data Baz = B { }"
+     , testCase "var def parses" $ codeParses (Just $ VarDef "x") "x = 3"
+     , testCase "var fun def parses" $ codeParses (Just $ VarDef "f") "f x = x"
      ]
   , testGroup "Whitespace parse tests" [
      testCase "empty is skipped"       $ skipped ""
@@ -47,9 +47,9 @@ tests = [
      , testProperty "never skip non-whitespace" dontSkipNonSpace
      ]
   ]
-  where codeParses src    = actionParses (Action.Code . trimSpace $ src) src
-        cmdParses cmd src = actionParses (Action.Command cmd) src
-        skipped src       = actionParses Action.Skip src
+  where codeParses code src = actionParses (Action.Code (trimSpace src, code)) src
+        cmdParses cmd       = actionParses (Action.Command cmd)
+        skipped             = actionParses Action.Skip
         trimSpace = dropWhile Char.isSpace
 
 actionParses :: Action.Action -> String -> HUnit.Assertion
@@ -59,8 +59,9 @@ actionParses v s = case Parse.input s of
 
 badCommandNoParse :: Property
 badCommandNoParse = forAll nonFlags noParseFlag
-  where nonFlags = (arbitrary `suchThat` notFlag)
+  where nonFlags = arbitrary `suchThat` notFlag
         noParseFlag s = either (const True) (const False) $ Parse.input (':':s)
+        -- | TODO: things like help3
         notFlag s = not . any (s `List.isPrefixOf`) $ ["help", "reset", "flags", "exit"]
 
 skipAllSpace :: Property

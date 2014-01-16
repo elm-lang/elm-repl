@@ -4,10 +4,11 @@ module Environment where
 import Data.ByteString (ByteString)
 import Data.Monoid     ((<>))
 import qualified Data.ByteString.Char8 as BS
-import qualified Data.Char             as Char
-import qualified Data.List             as List
+-- | TODO: Switch to a Char-based trie.
 import Data.Trie       (Trie)
 import qualified Data.Trie             as Trie
+
+import Action (Term, Def(..))
 
 data Repl = Repl
     { compilerPath :: FilePath
@@ -31,40 +32,12 @@ toElm :: Repl -> String
 toElm env = unlines $ "module Repl where" : decls
     where decls = concatMap Trie.elems [ imports env, adts env, defs env ]
 
-insert :: String -> Repl -> Repl
-insert str env
-    | List.isPrefixOf "import " str = 
-      let name = BS.pack . getFirstCap . words $ str
-          getFirstCap (token@(c:_):rest) = if Char.isUpper c
-                                           then token
-                                           else getFirstCap rest
-          getFirstCap _ = str
-      in  noDisplay $ env { imports = Trie.insert name str (imports env) }
-
-    | List.isPrefixOf "data " str =
-        let name = BS.pack . takeWhile (/=' ') . drop 5 $ str
-        in  noDisplay $ env { adts = Trie.insert name str (adts env) }
-            
-    | otherwise =
-        case break (=='=') str of
-          (_,"") -> display str env
-          (beforeEquals, _:c:_)
-              | Char.isSymbol c || hasLet beforeEquals || hasBrace beforeEquals -> display str env
-              | otherwise -> let name = declName $ beforeEquals
-                             in  define (BS.pack name) str (display name env)
-          _ -> error "Environment.hs: Case error. Submit bug report."
-        where
-          declName pattern =
-              case takeWhile Char.isSymbol . dropWhile (not . Char.isSymbol) $ pattern of
-                "" -> takeWhile (/=' ') pattern
-                op -> op
-
-          hasLet = elem "let" . map token . words
-            where
-              isVarChar c = Char.isAlpha c || Char.isDigit c || elem c "_'"
-              token = takeWhile isVarChar . dropWhile (not . Char.isAlpha)
-
-          hasBrace = elem '{'
+insert :: Term -> Repl -> Repl
+insert (src, def) env = case def of
+  Nothing -> display src env
+  Just (Import mport) -> noDisplay $ env { imports = Trie.insert (BS.pack mport) src (imports env) }
+  Just (DataDef def)  -> noDisplay $ env { adts    = Trie.insert (BS.pack def)   src (adts env) }
+  Just (VarDef var)   -> define (BS.pack var) src . display var $ env
 
 define :: ByteString -> String -> Repl -> Repl
 define name body env = env { defs = Trie.insert name body (defs env) }
