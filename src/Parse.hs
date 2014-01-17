@@ -26,30 +26,32 @@ result = do
       else Code . mkTerm <$> many anyChar
 
 command :: Parser Command
-command = choice . map try $ (flags : basics)
-    where
-      basics = map basicCommand [ ("exit",Exit), ("reset",Reset), ("help",Help Nothing) ]
-
-      basicCommand (name, cmd) =
-          string name >> spaces >> eof >> return cmd
+command = do
+  flag <- many1 notSpace
+  case flag of
+    "exit"  -> basicCommand Exit
+    "reset" -> basicCommand Reset
+    "help"  -> basicCommand $ Help Nothing
+    "flags" -> try (basicCommand (InfoFlags Nothing))
+               <|> (many1 space >> flags)
+    _       -> return $ Help . Just $ flag
+  where basicCommand cmd = spaces >> eof >> return cmd
 
 flags :: Parser Command
 flags = do
-  string "flags" >> notFollowedBy notSpace
-  modifier <|> return (InfoFlags Nothing)
-  where modifier = do
-          many1 space
-          flag <- many1 notSpace
-          case flag of
-            "add"    -> srcDirFlag AddFlag
-            "remove" -> srcDirFlag RemoveFlag
-            "list"   -> return ListFlags
-            "clear"  -> return ClearFlags
-            _        -> return $ InfoFlags . Just $ flag
-        srcDirFlag ctor = do
+  flag <- many1 notSpace
+  case flag of
+    "add"    -> srcDirFlag AddFlag
+    "remove" -> srcDirFlag RemoveFlag
+    "list"   -> return ListFlags
+    "clear"  -> return ClearFlags
+    _        -> return $ InfoFlags . Just $ flag
+  where srcDirFlag ctor = do
           many1 space
           ctor <$> srcDir
-        notSpace = satisfy $ not . Char.isSpace
+
+notSpace :: Parser Char
+notSpace = satisfy $ not . Char.isSpace
 
 srcDir :: Parser String
 srcDir = do

@@ -15,8 +15,8 @@ run :: Command -> ReplM (Maybe ExitCode)
 run cmd =
   case cmd of
     Exit         -> Just <$> liftIO exitSuccess
-    Help m       -> displayErr "Bad command: " m >> display helpInfo
-    InfoFlags m  -> displayErr "Bad flag: " m    >> display flagsInfo
+    Help m       -> displayErr "Bad command\n" m >> display helpInfo
+    InfoFlags m  -> displayErr "Bad flag\n" m    >> display flagsInfo
     ListFlags    -> display . unlines . Env.flags =<< get
 
     AddFlag flag -> modifyIfPresent True flag "Added " "Flag already added!" $ \env ->
