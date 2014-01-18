@@ -1,7 +1,8 @@
 Upcoming Release
 ================
 Features:
-  * Basic auto-completion
+  * Basic auto-completion.
+  * Better error messages.
 
 Release 0.2
 ===========
