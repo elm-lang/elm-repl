@@ -28,14 +28,14 @@ result = do
 command :: Parser Command
 command = do
   flag <- many1 notSpace
+  spaces
   case flag of
     "exit"  -> basicCommand Exit
     "reset" -> basicCommand Reset
     "help"  -> basicCommand $ Help Nothing
-    "flags" -> try (basicCommand (InfoFlags Nothing))
-               <|> (many1 space >> flags)
+    "flags" -> basicCommand (InfoFlags Nothing) <|> flags
     _       -> return $ Help . Just $ flag
-  where basicCommand cmd = spaces >> eof >> return cmd
+  where basicCommand cmd = cmd <$ eof
 
 flags :: Parser Command
 flags = do
