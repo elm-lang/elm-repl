@@ -18,12 +18,11 @@ input inp = case parse result "" inp of
 result :: Parser Action
 result = do
   spaces
-  (Skip <$ eof)
-    <|> do
-    c <- lookAhead anyChar
-    if c == ':'
-      then char ':' >> Command <$> command
-      else Code . mkTerm <$> many anyChar
+  skip <|> cmd <|> term
+  where
+    skip = Skip <$ eof
+    cmd  = char ':' >> Command <$> command
+    term = Code . mkTerm <$> many anyChar
 
 command :: Parser Command
 command = do
