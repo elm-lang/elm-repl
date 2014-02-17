@@ -4,6 +4,9 @@ Features:
   * Basic auto-completion.
   * Better error messages.
 
+Bug Fixes:
+  * Fix error when running consecutive commands quickly.
+
 Release 0.2
 ===========
 Features:
