@@ -13,7 +13,7 @@ License-file:        LICENSE
 
 Author:              Evan Czaplicki
 Maintainer:          info@elm-lang.org
-Copyright:           Copyright: (c) 2011-2013 Evan Czaplicki
+Copyright:           Copyright: (c) 2011-2014 Evan Czaplicki
 
 Category:            Tool
 
@@ -26,6 +26,7 @@ source-repository head
   location: git://github.com/evancz/elm-repl.git
 
 Executable elm-repl
+  ghc-options:         -W
   Hs-Source-Dirs:      src
   Main-is:             Repl.hs
   other-modules:       Action,
@@ -42,7 +43,7 @@ Executable elm-repl
                        cmdargs,
                        containers >= 0.3,
                        directory,
-                       Elm >= 0.10.1,
+                       Elm >= 0.12,
                        filepath,
                        haskeline,
                        transformers >= 0.2,
@@ -52,10 +53,10 @@ Executable elm-repl
                        filepath,
                        bytestring-trie
 
-  ghc-options:         -W
 
 Test-Suite test
   Type:                exitcode-stdio-1.0
+  ghc-options:         -W
   Hs-Source-Dirs:      tests, src
   Main-is:             Main.hs
   build-depends:       test-framework,
@@ -77,5 +78,3 @@ Test-Suite test
                        parsec >= 3.0,
                        filepath,
                        bytestring-trie
-                       
-  ghc-options:         -W
