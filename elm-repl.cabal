@@ -26,10 +26,16 @@ source-repository head
   location: git://github.com/evancz/elm-repl.git
 
 Executable elm-repl
+  Hs-Source-Dirs:      src
   Main-is:             Repl.hs
-  other-modules:       Environment,
+  other-modules:       Action,
+                       Command,
+                       Completion,
+                       Environment,
                        Evaluator,
-                       Flags
+                       Flags,
+                       Monad,
+                       Parse
 
   Build-depends:       base >=4.2 && <5,
                        bytestring,
@@ -43,4 +49,33 @@ Executable elm-repl
                        mtl >= 2,
                        process,
                        parsec >= 3.0,
-                       filepath
+                       filepath,
+                       bytestring-trie
+
+  ghc-options:         -W
+
+Test-Suite test
+  Type:                exitcode-stdio-1.0
+  Hs-Source-Dirs:      tests, src
+  Main-is:             Main.hs
+  build-depends:       test-framework,
+                       test-framework-hunit,
+                       test-framework-quickcheck2,
+                       HUnit,
+                       QuickCheck,
+                       base >=4.2 && <5,
+                       bytestring,
+                       cmdargs,
+                       containers >= 0.3,
+                       directory,
+                       Elm >= 0.10.1,
+                       filepath,
+                       haskeline,
+                       transformers >= 0.2,
+                       mtl >= 2,
+                       process,
+                       parsec >= 3.0,
+                       filepath,
+                       bytestring-trie
+                       
+  ghc-options:         -W

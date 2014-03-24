@@ -6,24 +6,28 @@ import qualified Data.ByteString.Char8 as BSC
 import qualified Data.ByteString       as BS
 import qualified Elm.Internal.Paths    as Elm
 import qualified Environment           as Env
-import qualified Data.Map              as Map
 
 import Control.Applicative ((<$>), (<*>))
-import Control.Exception
 import Control.Monad       (unless)
-import System.Directory    (removeFile)
+import Control.Monad.RWS   (get, modify, MonadState)
+import Control.Monad.Trans (liftIO)
+import System.Directory    (doesFileExist, removeFile)
 import System.Exit         (ExitCode(..))
 import System.FilePath     ((</>), replaceExtension)
 import System.IO
-import System.IO.Error     (isDoesNotExistError)
 import System.Process
 
-runRepl :: String -> Env.Repl -> IO Env.Repl
-runRepl "" env = return env
-runRepl input oldEnv =
-  do writeFile tempElm $ Env.toElm newEnv
-     success <- runCmdWithCallback (Env.compilerPath newEnv) elmArgs $ \types -> do
-       reformatJS input tempJS
+import Monad
+import Action
+
+evalPrint :: Term -> ReplM ()
+evalPrint term =
+  do modify $ Env.insert term 
+     env <- get
+     liftIO $ writeFile tempElm $ Env.toElm env
+     let elmArgs = Env.flags env ++ ["--make", "--only-js", "--print-types", tempElm]
+     liftIO . runCmdWithCallback (Env.compilerPath env) elmArgs $ \types -> do
+       reformatJS tempJS
        runCmdWithCallback "node" nodeArgs $ \value' ->
            let value = BSC.init value'
                tipe = scrapeOutputType types
@@ -31,20 +35,17 @@ runRepl input oldEnv =
                            BSC.isInfixOf "\n" tipe ||
                            BSC.length value + BSC.length tipe > 80   
                message = BS.concat [ if isTooLong then value' else value, tipe ]
-           in  do unless (BSC.null value') $ BSC.hPutStrLn stdout message
-                  return True
-     removeIfExists tempElm
-     return $ if success then newEnv else oldEnv
+           in  unless (BSC.null value') $ BSC.hPutStrLn stdout message
+     liftIO $ removeIfExists tempElm
+     return ()
   where
-    newEnv = Env.insert input oldEnv
 
     tempElm = "repl-temp-000.elm"
     tempJS  = "build" </> replaceExtension tempElm "js"
     
     nodeArgs = [tempJS]
-    elmArgs  = Env.flags newEnv ++ ["--make", "--only-js", "--print-types", tempElm]
 
-runCmdWithCallback :: FilePath -> [String] -> (BS.ByteString -> IO Bool) -> IO Bool
+runCmdWithCallback :: FilePath -> [String] -> (BS.ByteString -> IO ()) -> IO ()
 runCmdWithCallback name args callback = do
   (_, stdout, stderr, handle') <- createProcess (proc name args) { std_out = CreatePipe
                                                                  , std_err = CreatePipe}
@@ -58,14 +59,14 @@ runCmdWithCallback name args callback = do
       o <- BSC.hGetContents out
       failure (BS.concat [o,e])
     (_, _, _) -> failure "Unknown error!"
- where failure message = BSC.hPutStrLn stderr message >> return False
+ where failure message = BSC.hPutStrLn stderr message
        missingExe = BSC.pack $ unlines $
                     [ "Error: '" ++ name ++ "' command not found."
                     , "  Do you have it installed?"
                     , "  Can it be run from anywhere? I.e. is it on your PATH?" ]
 
-reformatJS :: String -> String -> IO ()
-reformatJS input tempJS =
+reformatJS :: String -> IO ()
+reformatJS tempJS =
   do rts <- BS.readFile Elm.runtime
      src <- BS.readFile tempJS
      BS.length src `seq` BS.writeFile tempJS (BS.concat [rts,src,out])
@@ -79,14 +80,15 @@ reformatJS input tempJS =
           , "var window = window || {};"
           , "var context = { inputs:[], addListener:function(){}, node:{} };\n"
           , "var repl = Elm.Repl.make(context);\n"
-          , "if ('", Env.output, "' in repl)\n"
-          , "  console.log(context.Native.Show.values.show(repl.", Env.output, "));" ]
+          , "if ('", Env.lastVar, "' in repl)\n"
+          , "  console.log(context.Native.Show.values.show(repl.", Env.lastVar, "));" ]
 
 scrapeOutputType :: BS.ByteString -> BS.ByteString
 scrapeOutputType = dropName . squashSpace . takeType . dropWhile (not . isOut) . BSC.lines
-  where isOut    = BS.isPrefixOf Env.output
-        dropName = BS.drop $ BSC.length Env.output
+  where isOut    = (||) <$> (BS.isPrefixOf Env.lastVar) <*> (BS.isPrefixOf (BS.append "Repl." Env.lastVar))
+        dropName = BSC.cons ' ' . BSC.dropWhile (/= ':')
         takeType (n:rest) = n : takeWhile isMoreType rest
+        takeType []       = error "Internal error in elm-repl (takeType): Please report this bug to https://github.com/evancz/elm-repl/issues/"
         isMoreType = (&&) <$> not . BS.null <*> (Char.isSpace . BSC.head)
         squashSpace = BSC.unwords . BSC.words . BSC.unwords
 
@@ -97,7 +99,8 @@ freshLine str | BS.null rest' = (line,"")
     (line,rest') = BSC.break (=='\n') str
 
 removeIfExists :: FilePath -> IO ()
-removeIfExists fileName = removeFile fileName `Control.Exception.catch` handleExists
-  where handleExists e
-          | isDoesNotExistError e = return ()
-          | otherwise = throwIO e
+removeIfExists fileName = do
+  exists <- doesFileExist fileName
+  if exists
+    then removeFile fileName
+    else return ()

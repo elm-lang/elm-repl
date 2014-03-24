@@ -1,4 +1,4 @@
-## Elm REPL
+## Elm REPL [![Build Status](https://travis-ci.org/evancz/elm-repl.png?branch=dev)](https://travis-ci.org/evancz/elm-repl)
 
 This tool lets you interact with values and functions directly.
 
@@ -52,7 +52,7 @@ The same can be done with definitions and ADTs:
 > case Left 32 of \
 |   Left n -> 2 * n \
 |   Right m -> m + 1
-4 : number
+64 : number
 ```
 
 You can import standard libraries and any library
