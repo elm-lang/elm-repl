@@ -66,7 +66,7 @@ getInput = go "> " ""
 welcomeMessage :: String
 welcomeMessage =
     "Elm REPL " ++ Flags.version ++
-    " <https://github.com/evancz/elm-repl#elm-repl>\n\
+    " <https://github.com/elm-lang/elm-repl#elm-repl>\n\
     \Type :help for help, :exit to exit"
 
 elmdir :: IO FilePath

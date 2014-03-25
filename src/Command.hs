@@ -58,7 +58,7 @@ flagsInfo = "Usage: flags [operation]\n\
             \    clear\t\t\tClears all flags\n" 
 
 helpInfo :: String
-helpInfo = "General usage directions: <https://github.com/evancz/elm-repl#elm-repl>\n\
+helpInfo = "General usage directions: <https://github.com/elm-lang/elm-repl#elm-repl>\n\
            \Additional commands available from the prompt:\n\
            \\n\
            \  :help\t\t\tList available commands\n\

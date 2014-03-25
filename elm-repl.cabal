@@ -6,7 +6,7 @@ Description:         A read-eval-print-loop (REPL) for evaluating Elm expression
                      help you play with small expressions and interact with
                      functions deep inside of larger projects.
 
-Homepage:            https://github.com/evancz/elm-repl#elm-repl
+Homepage:            https://github.com/elm-lang/elm-repl#elm-repl
 
 License:             BSD3
 License-file:        LICENSE
@@ -23,7 +23,7 @@ Cabal-version:       >=1.8
 
 source-repository head
   type:     git
-  location: git://github.com/evancz/elm-repl.git
+  location: git://github.com/elm-lang/elm-repl.git
 
 Executable elm-repl
   ghc-options:         -W

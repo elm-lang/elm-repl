@@ -81,7 +81,7 @@ mkCode src
           | Char.isSymbol c || hasLet beforeEquals || hasBrace beforeEquals ->
             Nothing
           | otherwise -> Just . VarDef $ declName beforeEquals
-        _ -> error "Parse.hs: Case error. Please submit bug report to https://github.com/evancz/elm-repl/issues."
+        _ -> error "Parse.hs: Case error. Please submit bug report to https://github.com/elm-lang/elm-repl/issues."
         where
           declName pattern =
               case takeWhile Char.isSymbol . dropWhile (not . Char.isSymbol) $ pattern of

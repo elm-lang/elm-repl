@@ -88,7 +88,7 @@ scrapeOutputType = dropName . squashSpace . takeType . dropWhile (not . isOut) .
   where isOut    = (||) <$> (BS.isPrefixOf Env.lastVar) <*> (BS.isPrefixOf (BS.append "Repl." Env.lastVar))
         dropName = BSC.cons ' ' . BSC.dropWhile (/= ':')
         takeType (n:rest) = n : takeWhile isMoreType rest
-        takeType []       = error "Internal error in elm-repl (takeType): Please report this bug to https://github.com/evancz/elm-repl/issues/"
+        takeType []       = error "Internal error in elm-repl (takeType): Please report this bug to https://github.com/elm-lang/elm-repl/issues/"
         isMoreType = (&&) <$> not . BS.null <*> (Char.isSpace . BSC.head)
         squashSpace = BSC.unwords . BSC.words . BSC.unwords
 
