@@ -40,18 +40,17 @@ Executable elm-repl
 
   Build-depends:       base >=4.2 && <5,
                        bytestring,
+                       bytestring-trie,
                        cmdargs,
                        containers >= 0.3,
                        directory,
                        Elm >= 0.12,
                        filepath,
                        haskeline,
-                       transformers >= 0.2,
                        mtl >= 2,
-                       process,
                        parsec >= 3.0,
-                       filepath,
-                       bytestring-trie
+                       process,
+                       transformers >= 0.2
 
 
 Test-Suite test
@@ -66,15 +65,14 @@ Test-Suite test
                        QuickCheck,
                        base >=4.2 && <5,
                        bytestring,
+                       bytestring-trie,
                        cmdargs,
                        containers >= 0.3,
                        directory,
                        Elm >= 0.10.1,
                        filepath,
                        haskeline,
-                       transformers >= 0.2,
                        mtl >= 2,
-                       process,
                        parsec >= 3.0,
-                       filepath,
-                       bytestring-trie
+                       process,
+                       transformers >= 0.2
