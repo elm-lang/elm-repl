@@ -23,8 +23,8 @@ main = do
   settings     <- mkSettings
   putStrLn welcomeMessage
   exitCode <- ifNodeIsInstalled (Repl.run flags settings)
-  unless buildExisted (removeDirectoryRecursive "build")
-  unless cacheExisted (removeDirectoryRecursive "cache")
+  unless buildExisted (removeDirectoryRecursiveIfExists "build")
+  unless cacheExisted (removeDirectoryRecursiveIfExists "cache")
   Exit.exitWith exitCode
 
 welcomeMessage :: String
@@ -62,3 +62,7 @@ ifNodeIsInstalled doSomeStuff =
         \    It appears that you do not have node.js installed though!\n\
         \    Install node.js from <http://nodejs.org/> to use elm-repl."
         
+removeDirectoryRecursiveIfExists :: FilePath -> IO ()
+removeDirectoryRecursiveIfExists path =
+    do exists <- doesDirectoryExist path
+       when exists (removeDirectoryRecursive path)
