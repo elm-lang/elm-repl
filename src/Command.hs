@@ -1,6 +1,5 @@
 module Command where
 
-import Data.Functor             ((<$))
 import Control.Monad.Trans      (liftIO)
 import Control.Monad.State      (get, modify)
 import System.Exit              (ExitCode(ExitSuccess))
