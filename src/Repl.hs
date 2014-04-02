@@ -2,7 +2,6 @@ module Main where
 
 import Control.Monad
 import Control.Monad.Trans
-import Data.Functor ((<$))
 import System.Console.Haskeline hiding (handle)
 import System.Directory
 import System.Exit
@@ -35,20 +34,26 @@ main = do
 
 repl :: InputT ReplM ExitCode
 repl = do
-  str' <- handleInterrupt (return . Just $ "") getInput
+  str' <- handleInterrupt (return $ Just "") getInput
   case str' of
     Nothing -> return ExitSuccess
     Just str -> do
-      let act = Parse.input str
-      m <- lift $ handle act
-      case m of
+      let action = Parse.input str
+      result <- lift $ handle action
+      case result of
         Just exit -> return exit
         Nothing   -> repl
 
 handle :: Act.Action -> ReplM (Maybe ExitCode)
-handle (Act.Command cmd) = Cmd.run cmd
-handle (Act.Code src)    = Nothing <$ Eval.evalPrint src
-handle (Act.Skip)        = return Nothing
+handle action =
+    case action of
+      Act.Command cmd -> Cmd.run cmd
+
+      Act.Skip -> return Nothing
+
+      Act.Code src ->
+          do Eval.evalPrint src
+             return Nothing
 
 getInput :: (MonadException m) => InputT m (Maybe String)
 getInput = go "> " ""
