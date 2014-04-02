@@ -1,36 +1,23 @@
-module Main where
+module Repl (run) where
 
-import Control.Monad
 import Control.Monad.Trans
 import System.Console.Haskeline hiding (handle)
-import System.Directory
 import System.Exit
-import System.FilePath ((</>))
-
-import qualified System.Console.CmdArgs as CmdArgs
 
 import Monad
 
 import qualified Action      as Act
 import qualified Command     as Cmd
-import qualified Completion
 import qualified Evaluator   as Eval
 import qualified Environment as Env
 import qualified Flags
 import qualified Parse
 
-main :: IO ()
-main = do
-  flags <- CmdArgs.cmdArgs Flags.flags
-  buildExisted <- doesDirectoryExist "build"
-  cacheExisted <- doesDirectoryExist "cache"
-  settings     <- mkSettings
-  putStrLn welcomeMessage
-  let mt = Env.empty (Flags.compiler flags)
-  exitCode <- runReplM flags mt . runInputT settings . withInterrupt $ repl
-  unless buildExisted (removeDirectoryRecursive "build")
-  unless cacheExisted (removeDirectoryRecursive "cache")
-  exitWith exitCode
+run :: Flags.Flags -> Settings ReplM -> IO ExitCode
+run flags settings =
+    runReplM flags initialEnv . runInputT settings $ withInterrupt repl
+  where
+    initialEnv = Env.empty (Flags.compiler flags)
 
 repl :: InputT ReplM ExitCode
 repl = do
@@ -67,23 +54,3 @@ getInput = go "> " ""
       continueWith str
         | null str || last str /= '\\' = return $ Just str
         | otherwise = go "| " (init str ++ "\n")
-
-welcomeMessage :: String
-welcomeMessage =
-    "Elm REPL " ++ Flags.version ++
-    " <https://github.com/elm-lang/elm-repl#elm-repl>\n\
-    \Type :help for help, :exit to exit"
-
-elmdir :: IO FilePath
-elmdir = do
-  dir <- (</> "repl") `fmap` getAppUserDataDirectory "elm"
-  createDirectoryIfMissing True dir
-  return dir
-
-mkSettings :: IO (Settings ReplM)
-mkSettings = do
-  historyFile <- (</> "history") `fmap` elmdir
-  return $ Settings { historyFile    = Just historyFile
-                    , autoAddHistory = True
-                    , complete       = Completion.complete
-                    }

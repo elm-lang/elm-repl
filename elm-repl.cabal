@@ -28,7 +28,7 @@ source-repository head
 Executable elm-repl
   ghc-options:         -W
   Hs-Source-Dirs:      src
-  Main-is:             Repl.hs
+  Main-is:             Main.hs
   other-modules:       Action,
                        Command,
                        Completion,
