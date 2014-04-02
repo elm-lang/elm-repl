@@ -1,9 +1,9 @@
 module Command where
 
-import Data.Functor             ((<$>), (<$))
+import Data.Functor             ((<$))
 import Control.Monad.Trans      (liftIO)
 import Control.Monad.State      (get, modify)
-import System.Exit              (ExitCode, exitSuccess)
+import System.Exit              (ExitCode(ExitSuccess))
 
 import qualified Data.List   as List
 
@@ -14,7 +14,7 @@ import Monad (ReplM)
 run :: Command -> ReplM (Maybe ExitCode)
 run cmd =
   case cmd of
-    Exit         -> Just <$> liftIO exitSuccess
+    Exit         -> return (Just ExitSuccess)
     Help m       -> displayErr "Bad command\n" m >> display helpInfo
     InfoFlags m  -> displayErr "Bad flag\n" m    >> display flagsInfo
     ListFlags    -> display . unlines . Env.flags =<< get
