@@ -49,9 +49,11 @@ runCmdWithCallback :: FilePath -> [String] -> (BS.ByteString -> IO ()) -> IO ()
 runCmdWithCallback name args callback =
   do (exitCode, stdout, stderr) <- readProcessWithExitCode name args ""
      case exitCode of
-       ExitSuccess     -> callback (BSC.pack stdout)
-       ExitFailure 127 -> failure missingExe
-       ExitFailure _   -> failure (stdout ++ stderr)
+       ExitSuccess -> callback (BSC.pack stdout)
+       ExitFailure code
+           | code == 127  -> failure missingExe  -- UNIX
+           | code == 9009 -> failure missingExe  -- Windows
+           | otherwise    -> failure (stdout ++ stderr)
   where
     failure message = hPutStrLn stderr message
 
