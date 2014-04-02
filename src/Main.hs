@@ -5,7 +5,6 @@ import System.Console.Haskeline hiding (handle)
 import System.Directory
 import qualified System.Exit as Exit
 import System.FilePath ((</>))
-import qualified System.Process as Process
 
 import qualified System.Console.CmdArgs as CmdArgs
 
@@ -49,16 +48,16 @@ mkSettings = do
 
 ifNodeIsInstalled :: IO Exit.ExitCode -> IO Exit.ExitCode
 ifNodeIsInstalled doSomeStuff =
-  do (exitCode, _, _) <- Process.readProcessWithExitCode "node" ["-v"] ""
-     case exitCode of
-       Exit.ExitFailure code| code `elem` [127,9009] ->
+  do maybePath <- findExecutable "node"
+     case maybePath of
+       Just _  -> doSomeStuff
+       Nothing ->
            do putStrLn nodeNotInstalledMessage
               return (Exit.ExitFailure 1)
-
-       _ -> doSomeStuff
   where
     nodeNotInstalledMessage =
-        "The REPL relies on node.js to execute JavaScript code outside the browser.\n\
+        "\n\
+        \The REPL relies on node.js to execute JavaScript code outside the browser.\n\
         \    It appears that you do not have node.js installed though!\n\
         \    Install node.js from <http://nodejs.org/> to use elm-repl."
         
