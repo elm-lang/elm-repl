@@ -47,20 +47,13 @@ evalPrint term =
 
 runCmdWithCallback :: FilePath -> [String] -> (BS.ByteString -> IO ()) -> IO ()
 runCmdWithCallback name args callback = do
-  (_, stdout, stderr, handle') <- createProcess (proc name args) { std_out = CreatePipe
-                                                                 , std_err = CreatePipe}
-  exitCode <- waitForProcess handle'
-  case (exitCode, stdout, stderr) of
-    (ExitSuccess, Just out, Just _) ->
-       callback =<< BS.hGetContents out
-    (ExitFailure 127, Just _, Just _) -> failure missingExe
-    (ExitFailure _, Just out, Just err) -> do
-      e <- BSC.hGetContents err
-      o <- BSC.hGetContents out
-      failure (BS.concat [o,e])
-    (_, _, _) -> failure "Unknown error!"
- where failure message = BSC.hPutStrLn stderr message
-       missingExe = BSC.pack $ unlines $
+  (exitCode, stdout, stderr) <- readProcessWithExitCode name args ""
+  case exitCode of
+    ExitSuccess     -> callback (BSC.pack stdout)
+    ExitFailure 127 -> failure missingExe
+    ExitFailure _   -> failure (stdout ++ stderr)
+ where failure message = hPutStrLn stderr message
+       missingExe = unlines $
                     [ "Error: '" ++ name ++ "' command not found."
                     , "  Do you have it installed?"
                     , "  Can it be run from anywhere? I.e. is it on your PATH?" ]
