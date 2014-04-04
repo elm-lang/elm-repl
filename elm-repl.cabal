@@ -1,12 +1,12 @@
 Name:                elm-repl
-Version:             0.2.1
+Version:             0.2.2
 Synopsis:            a REPL for Elm
 Description:         A read-eval-print-loop (REPL) for evaluating Elm expressions,
                      definitions, ADTs, and module imports. This tool is meant to
                      help you play with small expressions and interact with
                      functions deep inside of larger projects.
 
-Homepage:            https://github.com/elm-lang/elm-repl#elm-repl
+Homepage:            https://github.com/elm-lang/elm-repl
 
 License:             BSD3
 License-file:        LICENSE
