@@ -1,5 +1,5 @@
-Upcoming Release
-================
+Release 0.2.1
+=============
 Features:
   * Basic auto-completion.
   * Better error messages.
