@@ -36,7 +36,8 @@ Executable elm-repl
                        Evaluator,
                        Flags,
                        Monad,
-                       Parse
+                       Parse,
+                       Repl
 
   Build-depends:       base >=4.2 && <5,
                        bytestring,
