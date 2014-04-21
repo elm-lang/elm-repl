@@ -9,6 +9,7 @@ import qualified Environment           as Env
 
 import Control.Applicative ((<$>), (<*>))
 import Control.Monad       (unless)
+import Control.Monad.Cont  (ContT(..))
 import Control.Monad.RWS   (get, modify, MonadState)
 import Control.Monad.Trans (liftIO)
 import System.Directory    (doesFileExist, removeFile)
@@ -26,36 +27,39 @@ evalPrint term =
      env <- get
      liftIO $ writeFile tempElm $ Env.toElm env
      let elmArgs = Env.flags env ++ ["--make", "--only-js", "--print-types", tempElm]
-     liftIO . runCmdWithCallback (Env.compilerPath env) elmArgs $ \types -> do
-       reformatJS tempJS
-       runCmdWithCallback "node" nodeArgs $ \value' ->
-           let value = BSC.init value'
-               tipe = scrapeOutputType types
-               isTooLong = BSC.isInfixOf "\n" value ||
-                           BSC.isInfixOf "\n" tipe ||
-                           BSC.length value + BSC.length tipe > 80   
-               message = BS.concat [ if isTooLong then value' else value, tipe ]
-           in  unless (BSC.null value') $ BSC.hPutStrLn stdout message
+     liftIO . runConts $
+       do types  <- runCmd (Env.compilerPath env) elmArgs
+          liftIO $ reformatJS tempJS
+          value' <- runCmd "node" nodeArgs
+          let value = BSC.init value'
+              tipe = scrapeOutputType types
+              isTooLong = BSC.isInfixOf "\n" value ||
+                          BSC.isInfixOf "\n" tipe ||
+                          BSC.length value + BSC.length tipe > 80   
+              message = BS.concat [ if isTooLong then value' else value, tipe ]
+            in liftIO $ unless (BSC.null value') $ BSC.hPutStrLn stdout message
      liftIO $ removeIfExists tempElm
      return ()
   where
 
+    runConts m = runContT m (\_ -> return ())
+    
     tempElm = "repl-temp-000.elm"
     tempJS  = "build" </> replaceExtension tempElm "js"
     
     nodeArgs = [tempJS]
 
-runCmdWithCallback :: FilePath -> [String] -> (BS.ByteString -> IO ()) -> IO ()
-runCmdWithCallback name args callback =
-  do (exitCode, stdout, stderr) <- readProcessWithExitCode name args ""
+runCmd :: FilePath -> [String] -> ContT () IO BS.ByteString
+runCmd name args = ContT $ \ret ->
+  do (exitCode, stdout, stderr) <- liftIO $ readProcessWithExitCode name args ""
      case exitCode of
-       ExitSuccess -> callback (BSC.pack stdout)
+       ExitSuccess -> ret (BSC.pack stdout)
        ExitFailure code
            | code == 127  -> failure missingExe  -- UNIX
            | code == 9009 -> failure missingExe  -- Windows
            | otherwise    -> failure (stdout ++ stderr)
   where
-    failure message = hPutStrLn stderr message
+    failure message = liftIO $ hPutStrLn stderr message
 
     missingExe =
         unlines $
