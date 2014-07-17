@@ -13,7 +13,8 @@ import Monad (ReplM)
 run :: Command -> ReplM (Maybe ExitCode)
 run cmd =
   case cmd of
-    Exit -> return (Just ExitSuccess)
+    Exit ->
+      return (Just ExitSuccess)
 
     Help m ->
         do displayErr "Bad command\n" m
