@@ -36,7 +36,8 @@ run cmd =
             env {Env.flags = List.delete flag $ Env.flags env}
 
     Reset ->
-        modifyAlways "Environment Reset" (Env.empty . Env.compilerPath)
+        modifyAlways "Environment Reset" $ \env ->
+          Env.empty (Env.compilerPath env) (Env.interpreterPath env)
 
     ClearFlags ->
         modifyAlways "All flags cleared" $ \env ->

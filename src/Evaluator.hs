@@ -10,7 +10,7 @@ import qualified Environment           as Env
 import Control.Applicative ((<$>), (<*>))
 import Control.Monad       (unless)
 import Control.Monad.Cont  (ContT(..))
-import Control.Monad.RWS   (get, modify, MonadState)
+import Control.Monad.RWS   (get, modify)
 import Control.Monad.Trans (liftIO)
 import System.Directory    (doesFileExist, removeFile)
 import System.Exit         (ExitCode(..))
@@ -30,7 +30,7 @@ evalPrint term =
      liftIO . runConts $
        do types  <- runCmd (Env.compilerPath env) elmArgs
           liftIO $ reformatJS tempJS
-          value' <- runCmd "node" nodeArgs
+          value' <- runCmd (Env.interpreterPath env) nodeArgs
           let value = BSC.init value'
               tipe = scrapeOutputType types
               isTooLong = BSC.isInfixOf "\n" value ||

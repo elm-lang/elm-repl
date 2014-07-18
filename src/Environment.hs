@@ -11,16 +11,17 @@ import qualified Data.Trie             as Trie
 import Action (Term, Def(..))
 
 data Repl = Repl
-    { compilerPath :: FilePath
+    { compilerPath  :: FilePath
+    , interpreterPath :: FilePath
     , flags :: [String]
     , imports :: Trie String
     , adts :: Trie String
     , defs :: Trie String
     } deriving Show
 
-empty :: FilePath -> Repl
-empty compilerPath =
-    Repl compilerPath [] Trie.empty Trie.empty (Trie.singleton firstVar (BS.unpack firstVar <> " = ()"))
+empty :: FilePath -> FilePath -> Repl
+empty cmpPath interpPath =
+    Repl cmpPath interpPath [] Trie.empty Trie.empty (Trie.singleton firstVar (BS.unpack firstVar <> " = ()"))
 
 firstVar :: ByteString
 firstVar = "tsol"
