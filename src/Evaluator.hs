@@ -82,8 +82,9 @@ reformatJS tempJS =
           , "var window = window || {};"
           , "var context = { inputs:[], addListener:function(){}, node:{} };\n"
           , "var repl = Elm.Repl.make(context);\n"
+          , "var show = Elm.Native.Show.make(context).show;"
           , "if ('", Env.lastVar, "' in repl)\n"
-          , "  console.log(context.Native.Show.values.show(repl.", Env.lastVar, "));" ]
+          , "  console.log(show(repl.", Env.lastVar, "));" ]
 
 scrapeOutputType :: BS.ByteString -> BS.ByteString
 scrapeOutputType = dropName . squashSpace . takeType . dropWhile (not . isOut) . BSC.lines
