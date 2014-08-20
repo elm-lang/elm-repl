@@ -21,7 +21,7 @@ main = do
   cacheExisted <- doesDirectoryExist "cache"
   settings     <- mkSettings
   putStrLn welcomeMessage
-  exitCode <- ifNodeIsInstalled (Repl.run flags settings)
+  exitCode <- ifJsInterpExists flags (Repl.run flags settings)
   unless buildExisted (removeDirectoryRecursiveIfExists "build")
   unless cacheExisted (removeDirectoryRecursiveIfExists "cache")
   Exit.exitWith exitCode
@@ -46,20 +46,22 @@ mkSettings = do
                     , complete       = Completion.complete
                     }
 
-ifNodeIsInstalled :: IO Exit.ExitCode -> IO Exit.ExitCode
-ifNodeIsInstalled doSomeStuff =
-  do maybePath <- findExecutable "node"
+ifJsInterpExists :: Flags.Flags -> IO Exit.ExitCode -> IO Exit.ExitCode
+ifJsInterpExists flags doSomeStuff =
+  let jsInterp = Flags.js_cmd flags
+  in do 
+     maybePath <- findExecutable jsInterp
      case maybePath of
        Just _  -> doSomeStuff
        Nothing ->
-           do putStrLn nodeNotInstalledMessage
+           do putStrLn interpNotInstalledMessage
               return (Exit.ExitFailure 1)
-  where
-    nodeNotInstalledMessage =
-        "\n\
-        \The REPL relies on node.js to execute JavaScript code outside the browser.\n\
-        \    It appears that you do not have node.js installed though!\n\
-        \    Install node.js from <http://nodejs.org/> to use elm-repl."
+     where
+       interpNotInstalledMessage =
+           "\n\
+           \The REPL relies on node.js to execute JavaScript code outside the browser.\n\
+           \    It appears that you do not have node.js installed though!\n\
+           \    Install node.js from <http://node.org/> to use elm-repl."
         
 removeDirectoryRecursiveIfExists :: FilePath -> IO ()
 removeDirectoryRecursiveIfExists path =
