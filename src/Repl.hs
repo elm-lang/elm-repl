@@ -1,16 +1,16 @@
 module Repl (run) where
 
-import Control.Monad.Trans
-import System.Console.Haskeline hiding (handle)
-import System.Exit
+import Control.Monad.Trans (lift)
+import System.Console.Haskeline (InputT, MonadException, Settings, getInputLine,
+                                 handleInterrupt, runInputT, withInterrupt)
+import System.Exit (ExitCode(ExitSuccess))
 
-import Monad
-
-import qualified Action      as Act
-import qualified Command     as Cmd
-import qualified Evaluator   as Eval
+import qualified Action as Act
+import qualified Command as Cmd
 import qualified Environment as Env
+import qualified Evaluator as Eval
 import qualified Flags
+import Monad (ReplM, runReplM)
 import qualified Parse
 
 run :: Flags.Flags -> Settings ReplM -> IO ExitCode
