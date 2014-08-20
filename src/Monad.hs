@@ -1,11 +1,11 @@
 module Monad (ReplM, runReplM)
        where
 
+import Control.Monad.RWS (RWST, runRWST)
 import Data.Functor ((<$>))
-import Control.Monad.RWS
 
-import Flags (Flags)
 import qualified Environment as Env
+import Flags (Flags)
 
 -- Reader: Build Flags
 -- State:  Current Environment
