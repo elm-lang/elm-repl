@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Completion (complete)
        where
 
@@ -13,12 +14,17 @@ import Monad (ReplM)
 import qualified Environment as Env
 
 complete, completeIdentifier :: CompletionFunc ReplM
-complete = completeQuotedWord Nothing "\"\'" (const $ return [] ) completeIdentifier
+complete = completeIdentifier -- completeQuotedWord Nothing "\"\'" (const $ return [] ) completeIdentifier
 completeIdentifier = completeWord Nothing " \t" lookupCompletions
 
 lookupCompletions :: String -> ReplM [Completion]
 lookupCompletions s = completions s . removeReserveds . Env.defs <$> get
-    where removeReserveds = Trie.delete Env.firstVar . Trie.delete Env.lastVar
+    where removeReserveds = Trie.unionL cmds . Trie.delete Env.firstVar . Trie.delete Env.lastVar
+          cmds = Trie.fromList [ (":exit", ""),
+                                 (":reset", ""),
+                                 (":help", ""),
+                                 (":flags", "")
+                               ]
 
 completions :: String -> Trie a  -> [Completion]
 completions s = Trie.lookupBy go (BS.pack s)
