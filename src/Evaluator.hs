@@ -1,25 +1,24 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Evaluator where
 
-import qualified Data.Char             as Char
-import qualified Data.ByteString.Char8 as BSC
-import qualified Data.ByteString       as BS
-import qualified Elm.Internal.Assets   as Elm
-import qualified Environment           as Env
-
 import Control.Applicative ((<$>), (<*>))
-import Control.Monad       (unless)
-import Control.Monad.Cont  (ContT(..))
-import Control.Monad.RWS   (get, modify)
+import Control.Monad (unless)
+import Control.Monad.Cont (ContT(ContT, runContT))
+import Control.Monad.RWS (get, modify)
 import Control.Monad.Trans (liftIO)
-import System.Directory    (doesFileExist, removeFile)
-import System.Exit         (ExitCode(..))
-import System.FilePath     ((</>), replaceExtension)
-import System.IO
-import System.Process
+import qualified Data.ByteString.Char8 as BSC
+import qualified Data.ByteString as BS
+import qualified Data.Char as Char
+import qualified Elm.Internal.Assets as Elm
+import System.Directory (doesFileExist, removeFile)
+import System.Exit (ExitCode(ExitFailure, ExitSuccess))
+import System.FilePath ((</>), replaceExtension)
+import System.IO (hPutStrLn, stderr, stdout)
+import System.Process (readProcessWithExitCode)
 
-import Monad
-import Action
+import Action (Term)
+import qualified Environment as Env
+import Monad (ReplM)
 
 evalPrint :: Term -> ReplM ()
 evalPrint term =
