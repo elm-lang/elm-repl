@@ -1,24 +1,23 @@
 module Main where
 
-import Control.Monad
-import System.Console.Haskeline hiding (handle)
-import System.Directory
+import Control.Monad (unless, when)
+import qualified System.Console.CmdArgs as CmdArgs
+import System.Console.Haskeline (Settings(Settings, autoAddHistory, complete,
+                                          historyFile))
+import qualified System.Directory as Dir
 import qualified System.Exit as Exit
 import System.FilePath ((</>))
 
-import qualified System.Console.CmdArgs as CmdArgs
-
-import Monad
-
-import qualified Repl
 import qualified Completion
 import qualified Flags
+import Monad (ReplM)
+import qualified Repl
 
 main :: IO ()
 main = do
   flags <- CmdArgs.cmdArgs Flags.flags
-  buildExisted <- doesDirectoryExist "build"
-  cacheExisted <- doesDirectoryExist "cache"
+  buildExisted <- Dir.doesDirectoryExist "build"
+  cacheExisted <- Dir.doesDirectoryExist "cache"
   settings     <- mkSettings
   putStrLn welcomeMessage
   exitCode <- ifNodeIsInstalled (Repl.run flags settings)
@@ -34,8 +33,8 @@ welcomeMessage =
 
 elmdir :: IO FilePath
 elmdir = do
-  dir <- (</> "repl") `fmap` getAppUserDataDirectory "elm"
-  createDirectoryIfMissing True dir
+  dir <- (</> "repl") `fmap` Dir.getAppUserDataDirectory "elm"
+  Dir.createDirectoryIfMissing True dir
   return dir
 
 mkSettings :: IO (Settings ReplM)
@@ -48,7 +47,7 @@ mkSettings = do
 
 ifNodeIsInstalled :: IO Exit.ExitCode -> IO Exit.ExitCode
 ifNodeIsInstalled doSomeStuff =
-  do maybePath <- findExecutable "node"
+  do maybePath <- Dir.findExecutable "node"
      case maybePath of
        Just _  -> doSomeStuff
        Nothing ->
@@ -63,5 +62,5 @@ ifNodeIsInstalled doSomeStuff =
         
 removeDirectoryRecursiveIfExists :: FilePath -> IO ()
 removeDirectoryRecursiveIfExists path =
-    do exists <- doesDirectoryExist path
-       when exists (removeDirectoryRecursive path)
+    do exists <- Dir.doesDirectoryExist path
+       when exists (Dir.removeDirectoryRecursive path)
