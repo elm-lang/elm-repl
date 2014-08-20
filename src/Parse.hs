@@ -1,18 +1,19 @@
 module Parse where
 
-import Data.Functor ((<$), (<$>))
-import Text.Parsec
-
 import qualified Data.Char as Char
+import Data.Functor ((<$), (<$>))
 import qualified Data.List as List
+import Text.Parsec (Parsec, (<|>), anyChar, char, choice, eof, many, many1,
+                    manyTill, parse, satisfy, space, spaces, string)
 
-import Action
+import Action (Action, Command)
+import qualified Action as A
 
 type Parser = Parsec String ()
 
 input :: String -> Action
 input inp = case parse result "" inp of
-  Left err  -> Command . Help . Just . show $ err
+  Left err  -> A.Command . A.Help . Just . show $ err
   Right act -> act
 
 result :: Parser Action
@@ -20,31 +21,31 @@ result = do
   spaces
   skip <|> cmd <|> term
   where
-    skip = Skip <$ eof
-    cmd  = char ':' >> Command <$> command
-    term = Code . mkTerm <$> many anyChar
+    skip = A.Skip <$ eof
+    cmd  = char ':' >> A.Command <$> command
+    term = A.Code . mkTerm <$> many anyChar
 
 command :: Parser Command
 command = do
   flag <- many1 notSpace
   spaces
   case flag of
-    "exit"  -> basicCommand Exit
-    "reset" -> basicCommand Reset
-    "help"  -> basicCommand $ Help Nothing
-    "flags" -> basicCommand (InfoFlags Nothing) <|> flags
-    _       -> return $ Help . Just $ flag
+    "exit"  -> basicCommand A.Exit
+    "reset" -> basicCommand A.Reset
+    "help"  -> basicCommand $ A.Help Nothing
+    "flags" -> basicCommand (A.InfoFlags Nothing) <|> flags
+    _       -> return $ A.Help . Just $ flag
   where basicCommand cmd = cmd <$ eof
 
 flags :: Parser Command
 flags = do
   flag <- many1 notSpace
   case flag of
-    "add"    -> srcDirFlag AddFlag
-    "remove" -> srcDirFlag RemoveFlag
-    "list"   -> return ListFlags
-    "clear"  -> return ClearFlags
-    _        -> return $ InfoFlags . Just $ flag
+    "add"    -> srcDirFlag A.AddFlag
+    "remove" -> srcDirFlag A.RemoveFlag
+    "list"   -> return A.ListFlags
+    "clear"  -> return A.ClearFlags
+    _        -> return $ A.InfoFlags . Just $ flag
   where srcDirFlag ctor = do
           many1 space
           ctor <$> srcDir
@@ -58,10 +59,10 @@ srcDir = do
   dir <- manyTill anyChar (choice [ space >> return (), eof ])
   return $ "--src-dir=" ++ dir
 
-mkTerm :: String -> Term
+mkTerm :: String -> A.Term
 mkTerm src = (src, mkCode src)
 
-mkCode :: String -> Maybe Def
+mkCode :: String -> Maybe A.Def
 mkCode src
   | List.isPrefixOf "import " src = 
     let name = getFirstCap . words $ src
@@ -69,18 +70,18 @@ mkCode src
                                        then tok
                                        else getFirstCap rest
         getFirstCap _ = src
-    in Just $ Import name
+    in Just $ A.Import name
 
   | List.isPrefixOf "data " src =
       let name = takeWhile (/=' ') . drop 5 $ src
-      in  Just $ DataDef name
+      in  Just $ A.DataDef name
 
   | otherwise = case break (=='=') src of
         (_,"") -> Nothing
         (beforeEquals, _:c:_)
           | Char.isSymbol c || hasLet beforeEquals || hasBrace beforeEquals ->
             Nothing
-          | otherwise -> Just . VarDef $ declName beforeEquals
+          | otherwise -> Just . A.VarDef $ declName beforeEquals
         _ -> error "Parse.hs: Case error. Please submit bug report to https://github.com/elm-lang/elm-repl/issues."
         where
           declName pattern =
