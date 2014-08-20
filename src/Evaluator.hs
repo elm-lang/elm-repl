@@ -9,7 +9,7 @@ import Control.Monad.Trans (liftIO)
 import qualified Data.ByteString.Char8 as BSC
 import qualified Data.ByteString as BS
 import qualified Data.Char as Char
-import qualified Elm.Internal.Assets as Elm
+import qualified Elm.Internal.Paths as Elm
 import System.Directory (doesFileExist, removeFile)
 import System.Exit (ExitCode(ExitFailure, ExitSuccess))
 import System.FilePath ((</>), (<.>))
