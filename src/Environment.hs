@@ -2,13 +2,13 @@
 module Environment where
 
 import Data.ByteString (ByteString)
-import Data.Monoid     ((<>))
 import qualified Data.ByteString.Char8 as BS
--- | TODO: Switch to a Char-based trie.
-import Data.Trie       (Trie)
-import qualified Data.Trie             as Trie
+import Data.Monoid ((<>))
+import Data.Trie (Trie) -- | TODO: Switch to a Char-based trie.
+import qualified Data.Trie as Trie
 
-import Action (Term, Def(..))
+import Action (Term)
+import qualified Action as A
 
 data Repl = Repl
     { compilerPath  :: FilePath
@@ -36,9 +36,9 @@ toElm env = unlines $ "module Repl where" : decls
 insert :: Term -> Repl -> Repl
 insert (src, def) env = case def of
   Nothing -> display src env
-  Just (Import mport) -> noDisplay $ env { imports = Trie.insert (BS.pack mport) src (imports env) }
-  Just (DataDef def)  -> noDisplay $ env { adts    = Trie.insert (BS.pack def)   src (adts env) }
-  Just (VarDef var)   -> define (BS.pack var) src . display var $ env
+  Just (A.Import mport) -> noDisplay $ env { imports = Trie.insert (BS.pack mport) src (imports env) }
+  Just (A.DataDef def)  -> noDisplay $ env { adts    = Trie.insert (BS.pack def)   src (adts env) }
+  Just (A.VarDef var)   -> define (BS.pack var) src . display var $ env
 
 define :: ByteString -> String -> Repl -> Repl
 define name body env = env { defs = Trie.insert name body (defs env) }
