@@ -4,7 +4,7 @@ module Evaluator where
 import qualified Data.Char             as Char
 import qualified Data.ByteString.Char8 as BSC
 import qualified Data.ByteString       as BS
-import qualified Elm.Internal.Paths    as Elm
+import qualified Elm.Internal.Assets   as Elm
 import qualified Environment           as Env
 
 import Control.Applicative ((<$>), (<*>))

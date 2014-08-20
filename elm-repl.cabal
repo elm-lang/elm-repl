@@ -43,16 +43,13 @@ Executable elm-repl
                        bytestring,
                        bytestring-trie,
                        cmdargs,
-                       containers >= 0.3,
                        directory,
-                       Elm >= 0.12,
+                       Elm >= 0.13 && < 0.14,
                        filepath,
                        haskeline,
                        mtl >= 2,
                        parsec >= 3.0,
-                       process,
-                       transformers >= 0.2
-
+                       process
 
 Test-Suite test
   Type:                exitcode-stdio-1.0
@@ -68,12 +65,10 @@ Test-Suite test
                        bytestring,
                        bytestring-trie,
                        cmdargs,
-                       containers >= 0.3,
                        directory,
-                       Elm >= 0.10.1,
+                       Elm >= 0.13 && < 0.14,
                        filepath,
                        haskeline,
                        mtl >= 2,
                        parsec >= 3.0,
-                       process,
-                       transformers >= 0.2
+                       process
