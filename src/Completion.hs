@@ -8,14 +8,13 @@ import Data.Functor ((<$>))
 import qualified Data.Trie as Trie
 import Data.Trie (Trie)
 import System.Console.Haskeline.Completion (Completion(Completion), CompletionFunc,
-                                            completeQuotedWord, completeWord)
+                                            completeWord)
 
 import Monad (ReplM)
 import qualified Environment as Env
 
-complete, completeIdentifier :: CompletionFunc ReplM
-complete = completeIdentifier -- completeQuotedWord Nothing "\"\'" (const $ return [] ) completeIdentifier
-completeIdentifier = completeWord Nothing " \t" lookupCompletions
+complete :: CompletionFunc ReplM
+complete = completeWord Nothing " \t" lookupCompletions
 
 lookupCompletions :: String -> ReplM [Completion]
 lookupCompletions s = completions s . removeReserveds . Env.defs <$> get
