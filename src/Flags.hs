@@ -1,9 +1,10 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 module Flags where
 
-import System.Console.CmdArgs
 import Data.Version (showVersion)
 import qualified Paths_elm_repl as This
+import System.Console.CmdArgs (Data, Typeable, (&=), explicit, help, helpArg,
+                               name, summary, typFile, versionArg)
 
 version = showVersion This.version
 
