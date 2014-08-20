@@ -20,7 +20,7 @@ main = do
   cacheExisted <- Dir.doesDirectoryExist "cache"
   settings     <- mkSettings
   putStrLn welcomeMessage
-  exitCode <- ifNodeIsInstalled (Repl.run flags settings)
+  exitCode <- ifJsInterpExists flags (Repl.run flags settings)
   unless buildExisted (removeDirectoryRecursiveIfExists "build")
   unless cacheExisted (removeDirectoryRecursiveIfExists "cache")
   Exit.exitWith exitCode
@@ -45,16 +45,18 @@ mkSettings = do
                     , complete       = Completion.complete
                     }
 
-ifNodeIsInstalled :: IO Exit.ExitCode -> IO Exit.ExitCode
-ifNodeIsInstalled doSomeStuff =
-  do maybePath <- Dir.findExecutable "node"
+ifJsInterpExists :: Flags.Flags -> IO Exit.ExitCode -> IO Exit.ExitCode
+ifJsInterpExists flags doSomeStuff =
+  do maybePath <- Dir.findExecutable jsInterp
      case maybePath of
        Just _  -> doSomeStuff
        Nothing ->
-           do putStrLn nodeNotInstalledMessage
+           do putStrLn interpNotInstalledMessage
               return (Exit.ExitFailure 1)
   where
-    nodeNotInstalledMessage =
+    jsInterp = Flags.js_cmd flags
+
+    interpNotInstalledMessage =
         "\n\
         \The REPL relies on node.js to execute JavaScript code outside the browser.\n\
         \    It appears that you do not have node.js installed though!\n\
