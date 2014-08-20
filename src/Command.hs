@@ -1,45 +1,45 @@
 module Command where
 
-import Control.Monad.Trans      (liftIO)
-import Control.Monad.State      (get, modify)
-import System.Exit              (ExitCode(ExitSuccess))
+import Control.Monad.State (get, modify)
+import Control.Monad.Trans (liftIO)
+import qualified Data.List as List
+import System.Exit (ExitCode(ExitSuccess))
 
-import qualified Data.List   as List
-
-import Action (Command(..))
+import Action (Command)
+import qualified Action as Cmd
 import qualified Environment as Env
 import Monad (ReplM)
 
 run :: Command -> ReplM (Maybe ExitCode)
 run cmd =
   case cmd of
-    Exit ->
+    Cmd.Exit ->
       return (Just ExitSuccess)
 
-    Help m ->
+    Cmd.Help m ->
         do displayErr "Bad command\n" m
            display helpInfo
 
-    InfoFlags m ->
+    Cmd.InfoFlags m ->
         do displayErr "Bad flag\n" m
            display flagsInfo
 
-    ListFlags ->
+    Cmd.ListFlags ->
         display . unlines . Env.flags =<< get
 
-    AddFlag flag ->
+    Cmd.AddFlag flag ->
         modifyIfPresent True flag "Added " "Flag already added!" $ \env ->
             env { Env.flags = Env.flags env ++ [flag] }
 
-    RemoveFlag flag ->
+    Cmd.RemoveFlag flag ->
         modifyIfPresent False flag "Removed flag " "No such flag." $ \env ->
             env {Env.flags = List.delete flag $ Env.flags env}
 
-    Reset ->
+    Cmd.Reset ->
         modifyAlways "Environment Reset" $ \env ->
           Env.empty (Env.compilerPath env) (Env.interpreterPath env)
 
-    ClearFlags ->
+    Cmd.ClearFlags ->
         modifyAlways "All flags cleared" $ \env ->
             env {Env.flags = []}
 
