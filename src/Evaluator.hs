@@ -12,7 +12,7 @@ import qualified Data.Char as Char
 import qualified Elm.Internal.Paths as Elm
 import System.Directory (doesFileExist, removeFile)
 import System.Exit (ExitCode(ExitFailure, ExitSuccess))
-import System.FilePath ((</>), (<.>))
+import System.FilePath ((</>), (<.>), replaceExtension)
 import System.IO (hPutStrLn, stderr, stdout)
 import System.Process (readProcessWithExitCode)
 
@@ -44,7 +44,7 @@ evalPrint term =
     runConts m = runContT m (\_ -> return ())
     
     tempElm = "repl-temp-000" <.> "elm"
-    tempJS  = "build" </> "Repl" <.> "js"
+    tempJS  = "build" </> replaceExtension tempElm "js"
     
     nodeArgs = [tempJS]
 
