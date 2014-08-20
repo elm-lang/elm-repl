@@ -1,16 +1,15 @@
 module Completion (complete)
        where
 
-import Data.Functor        ((<$>))
-import Data.Trie           (Trie)
 import Control.Monad.State (get)
-import System.Console.Haskeline.Completion
-
 import qualified Data.ByteString.Char8 as BS
-import qualified Data.Trie             as Trie
+import Data.Functor ((<$>))
+import qualified Data.Trie as Trie
+import Data.Trie (Trie)
+import System.Console.Haskeline.Completion (Completion(Completion), CompletionFunc,
+                                            completeQuotedWord, completeWord)
 
 import Monad (ReplM)
-
 import qualified Environment as Env
 
 complete, completeIdentifier :: CompletionFunc ReplM
