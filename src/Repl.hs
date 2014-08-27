@@ -1,6 +1,6 @@
 module Repl (run) where
 
-import Control.Monad.Trans (lift)
+import Control.Monad.Trans (lift, liftIO)
 import System.Console.Haskeline (InputT, MonadException, Settings, getInputLine,
                                  handleInterrupt, runInputT, withInterrupt)
 import System.Exit (ExitCode(ExitSuccess))
@@ -39,9 +39,10 @@ handle action =
       Act.Skip -> return Nothing
 
       Act.Code src ->
-          do Eval.evalPrint src
+          do handleInterrupt interruptedMsg (Eval.evalPrint src)
              return Nothing
-
+    where
+      interruptedMsg = liftIO $ putStrLn " Computation interrupted, any definitions were not completed."
 getInput :: (MonadException m) => InputT m (Maybe String)
 getInput = go "> " ""
     where
