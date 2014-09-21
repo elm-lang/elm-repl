@@ -17,7 +17,7 @@ run :: Flags.Flags -> Settings ReplM -> IO ExitCode
 run flags settings =
     runReplM flags initialEnv . runInputT settings $ withInterrupt repl
   where
-    initialEnv = Env.empty (Flags.compiler flags) (Flags.js_cmd flags)
+    initialEnv = Env.empty (Flags.compiler flags) (Flags.interpreter flags)
 
 repl :: InputT ReplM ExitCode
 repl = do

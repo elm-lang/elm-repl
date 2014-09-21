@@ -54,7 +54,7 @@ ifJsInterpExists flags doSomeStuff =
            do putStrLn interpNotInstalledMessage
               return (Exit.ExitFailure 1)
   where
-    jsInterp = Flags.js_cmd flags
+    jsInterp = Flags.interpreter flags
 
     interpNotInstalledMessage =
         "\n\
