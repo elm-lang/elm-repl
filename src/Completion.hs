@@ -1,39 +1,56 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Completion (complete)
-       where
+module Completion (complete) where
 
 import Control.Monad.State (get)
 import qualified Data.ByteString.Char8 as BS
-import Data.Functor ((<$>))
 import qualified Data.Trie as Trie
-import Data.Trie (Trie)
-import System.Console.Haskeline.Completion (Completion(Completion), CompletionFunc,
-                                            completeWord)
+import System.Console.Haskeline.Completion (Completion(Completion), CompletionFunc, completeWord)
 
 import Monad (ReplM)
 import qualified Environment as Env
 
+
 complete :: CompletionFunc ReplM
-complete = completeWord Nothing " \t" lookupCompletions
+complete =
+    completeWord Nothing " \t" lookupCompletions
+
 
 lookupCompletions :: String -> ReplM [Completion]
-lookupCompletions s = completions s . removeReserveds . Env.defs <$> get
-    where removeReserveds = Trie.unionL cmds . Trie.delete Env.firstVar . Trie.delete Env.lastVar
-          cmds = Trie.fromList [ (":exit", ""),
-                                 (":reset", ""),
-                                 (":help", ""),
-                                 (":flags", "")
-                               ]
+lookupCompletions string =
+    do  env <- get
+        let defs = adjustDefs (Env.defs env)
+        return (completions string defs)
+    where
+      adjustDefs defs =
+          Trie.unionL cmds $
+          Trie.delete Env.firstVar $
+          Trie.delete Env.lastVar defs
 
-completions :: String -> Trie a  -> [Completion]
-completions s = Trie.lookupBy go (BS.pack s)
-  where go :: Maybe a -> Trie a -> [Completion]
-        go isElem suffixesTrie = maybeCurrent ++ suffixCompletions
-          where maybeCurrent = case isElem of
-                  Nothing -> []
-                  Just _  -> [current]
-                current = Completion s s True
+      cmds =
+          Trie.fromList
+              [ (":exit", "")
+              , (":reset", "")
+              , (":help", "")
+              , (":flags", "")
+              ]
 
-                suffixCompletions = map (suffixCompletion . BS.unpack) . Trie.keys $ suffixesTrie
-                suffixCompletion suf = Completion full full False
-                  where full = s ++ suf
+
+completions :: String -> Trie.Trie a  -> [Completion]
+completions string =
+    Trie.lookupBy go (BS.pack string)
+  where
+    go :: Maybe a -> Trie.Trie a -> [Completion]
+    go isElem suffixesTrie =
+        maybeCurrent ++ suffixCompletions
+      where
+        maybeCurrent =
+            case isElem of
+              Nothing -> []
+              Just _  -> [ Completion string string True ]
+
+        suffixCompletions =
+            map (suffixCompletion . BS.unpack) (Trie.keys suffixesTrie)
+
+        suffixCompletion suffix =
+            let full = string ++ suffix in
+            Completion full full False
