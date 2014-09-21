@@ -13,46 +13,52 @@ import qualified Flags
 import Monad (ReplM)
 import qualified Repl
 
+
 main :: IO ()
-main = do
-  flags <- CmdArgs.cmdArgs Flags.flags
-  buildExisted <- Dir.doesDirectoryExist "build"
-  cacheExisted <- Dir.doesDirectoryExist "cache"
-  settings     <- mkSettings
-  putStrLn welcomeMessage
-  exitCode <- ifJsInterpExists flags (Repl.run flags settings)
-  unless buildExisted (removeDirectoryRecursiveIfExists "build")
-  unless cacheExisted (removeDirectoryRecursiveIfExists "cache")
-  Exit.exitWith exitCode
+main =
+ do flags <- CmdArgs.cmdArgs Flags.flags
+    buildExisted <- Dir.doesDirectoryExist "build"
+    cacheExisted <- Dir.doesDirectoryExist "cache"
+    settings     <- mkSettings
+    putStrLn welcomeMessage
+    exitCode <- ifJsInterpExists flags (Repl.run flags settings)
+    unless buildExisted (removeDirectoryRecursiveIfExists "build")
+    unless cacheExisted (removeDirectoryRecursiveIfExists "cache")
+    Exit.exitWith exitCode
+
 
 welcomeMessage :: String
 welcomeMessage =
-    "Elm REPL " ++ Flags.version ++
-    " <https://github.com/elm-lang/elm-repl#elm-repl>\n\
+    "Elm REPL " ++ Flags.version ++ " <https://github.com/elm-lang/elm-repl#elm-repl>\n\
     \Type :help for help, :exit to exit"
 
-elmdir :: IO FilePath
-elmdir = do
-  dir <- (</> "repl") `fmap` Dir.getAppUserDataDirectory "elm"
-  Dir.createDirectoryIfMissing True dir
-  return dir
+
+getDataDir :: IO FilePath
+getDataDir =
+ do root <- Dir.getAppUserDataDirectory "elm"
+    let dir = root </> "repl"
+    Dir.createDirectoryIfMissing True dir
+    return dir
+
 
 mkSettings :: IO (Settings ReplM)
-mkSettings = do
-  historyFile <- (</> "history") `fmap` elmdir
-  return $ Settings { historyFile    = Just historyFile
-                    , autoAddHistory = True
-                    , complete       = Completion.complete
-                    }
+mkSettings =
+ do dataDir <- getDataDir
+    return $ Settings
+        { historyFile    = Just (dataDir </> "history")
+        , autoAddHistory = True
+        , complete       = Completion.complete
+        }
+
 
 ifJsInterpExists :: Flags.Flags -> IO Exit.ExitCode -> IO Exit.ExitCode
 ifJsInterpExists flags doSomeStuff =
-  do maybePath <- Dir.findExecutable jsInterp
-     case maybePath of
-       Just _  -> doSomeStuff
-       Nothing ->
-           do putStrLn interpNotInstalledMessage
-              return (Exit.ExitFailure 1)
+ do maybePath <- Dir.findExecutable jsInterp
+    case maybePath of
+      Just _  -> doSomeStuff
+      Nothing ->
+        do  putStrLn interpNotInstalledMessage
+            return (Exit.ExitFailure 1)
   where
     jsInterp = Flags.interpreter flags
 
@@ -60,9 +66,11 @@ ifJsInterpExists flags doSomeStuff =
         "\n\
         \The REPL relies on node.js to execute JavaScript code outside the browser.\n\
         \    It appears that you do not have node.js installed though!\n\
-        \    Install node.js from <http://nodejs.org/> to use elm-repl."
+        \    You can install node.js from <http://nodejs.org/>. If it is already\n\
+        \    installed but has a different name, use the --interpreter flag."
+
         
 removeDirectoryRecursiveIfExists :: FilePath -> IO ()
 removeDirectoryRecursiveIfExists path =
-    do exists <- Dir.doesDirectoryExist path
-       when exists (Dir.removeDirectoryRecursive path)
+ do exists <- Dir.doesDirectoryExist path
+    when exists (Dir.removeDirectoryRecursive path)
