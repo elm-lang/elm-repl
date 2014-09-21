@@ -14,13 +14,13 @@ import System.FilePath ((</>), (<.>), replaceExtension)
 import System.IO (hPutStrLn, stderr, stdout)
 import System.Process (readProcessWithExitCode)
 
-import Action (Term)
+import qualified Action as A
 import qualified Environment as Env
 import Monad (ReplM)
 
-evalPrint :: Term -> ReplM ()
-evalPrint term =
- do modify $ Env.insert term 
+evalPrint :: (Maybe A.DefName, String) -> ReplM ()
+evalPrint code =
+ do modify $ Env.insert code 
     env <- get
     liftIO $ writeFile tempElmPath (Env.toElm env)
     liftIO . runConts $ do

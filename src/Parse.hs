@@ -25,7 +25,7 @@ result =
   where
     skip = eof >> return A.Skip
     cmd  = char ':' >> A.Command <$> command
-    term = A.Code . mkTerm <$> many anyChar
+    term = A.Code . extractCode <$> many anyChar
 
 command :: Parser Command
 command =
@@ -69,12 +69,13 @@ srcDir =
       return ("--src-dir=" ++ dir)
 
 
-mkTerm :: String -> A.Term
-mkTerm src = (src, mkCode src)
+extractCode :: String -> (Maybe A.DefName, String)
+extractCode rawInput =
+    (extractDefName rawInput, rawInput)
 
 
-mkCode :: String -> Maybe A.Def
-mkCode src
+extractDefName :: String -> Maybe A.DefName
+extractDefName src
     | List.isPrefixOf "import " src =
         let getFirstCap tokens =
                 case tokens of

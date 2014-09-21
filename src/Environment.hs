@@ -4,10 +4,9 @@ module Environment where
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as BS
 import Data.Monoid ((<>))
-import Data.Trie (Trie) -- | TODO: Switch to a Char-based trie.
+import Data.Trie (Trie) -- TODO: Switch to a Char-based trie.
 import qualified Data.Trie as Trie
 
-import Action (Term)
 import qualified Action as A
 
 
@@ -48,24 +47,24 @@ toElm env =
         concatMap Trie.elems [ imports env, adts env, defs env ]
 
 
-insert :: Term -> Repl -> Repl
-insert (src, maybeDef) env =
-    case maybeDef of
+insert :: (Maybe A.DefName, String) -> Repl -> Repl
+insert (maybeName, src) env =
+    case maybeName of
       Nothing ->
           display src env
 
-      Just (A.Import import') ->
+      Just (A.Import name) ->
           noDisplay $ env
-              { imports = Trie.insert (BS.pack import') src (imports env)
+              { imports = Trie.insert (BS.pack name) src (imports env)
               }
 
-      Just (A.DataDef def) ->
+      Just (A.DataDef name) ->
           noDisplay $ env
-              { adts = Trie.insert (BS.pack def) src (adts env)
+              { adts = Trie.insert (BS.pack name) src (adts env)
               }
 
-      Just (A.VarDef var) ->
-          define (BS.pack var) src (display var env)
+      Just (A.VarDef name) ->
+          define (BS.pack name) src (display name env)
 
 
 define :: ByteString -> String -> Repl -> Repl

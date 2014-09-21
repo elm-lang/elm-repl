@@ -2,7 +2,7 @@ module Action where
 
 data Action
     = Command Command
-    | Code Term
+    | Code (Maybe DefName, String)
     | Skip
     deriving (Show, Eq)
 
@@ -18,9 +18,7 @@ data Command
     | Reset
     deriving (Show, Eq)
 
-type Term = (String, Maybe Def)
-
-data Def
+data DefName
     = VarDef  String
     | DataDef String
     | Import  String
