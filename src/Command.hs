@@ -66,9 +66,11 @@ run cmd =
            modify mod
            return Nothing
 
+
 xor :: Bool -> Bool -> Bool
-xor True  = not
-xor False = id
+xor boolean boolean' =
+    boolean /= boolean'
+
 
 flagsInfo :: String
 flagsInfo =
