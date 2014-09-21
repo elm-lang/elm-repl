@@ -7,11 +7,11 @@ import qualified Flags
 
 -- Reader: Build Flags
 -- State:  Current Environment
-type ReplT = RWST Flags.Flags () Env.Repl
+type ReplT = RWST Flags.Flags () Env.Env
 type ReplM = ReplT IO
 
 
-runReplM :: Flags.Flags -> Env.Repl -> ReplM a -> IO a
+runReplM :: Flags.Flags -> Env.Env -> ReplM a -> IO a
 runReplM flags env command =
     do  (x,_,_) <- runRWST command flags env
     	return x

@@ -10,7 +10,7 @@ import qualified Data.Trie as Trie
 import qualified Action as A
 
 
-data Repl = Repl
+data Env = Env
     { compilerPath  :: FilePath
     , interpreterPath :: FilePath
     , flags :: [String]
@@ -20,10 +20,9 @@ data Repl = Repl
     } deriving Show
 
 
-empty :: FilePath -> FilePath -> Repl
+empty :: FilePath -> FilePath -> Env
 empty compiler interpreter =
-    Repl
-        compiler
+    Env compiler
         interpreter
         []
         Trie.empty
@@ -39,7 +38,7 @@ lastVar :: ByteString
 lastVar = "deltron3030"
 
 
-toElm :: Repl -> String
+toElm :: Env -> String
 toElm env =
     unlines $ "module Repl where" : decls
   where
@@ -47,7 +46,7 @@ toElm env =
         concatMap Trie.elems [ imports env, adts env, defs env ]
 
 
-insert :: (Maybe A.DefName, String) -> Repl -> Repl
+insert :: (Maybe A.DefName, String) -> Env -> Env
 insert (maybeName, src) env =
     case maybeName of
       Nothing ->
@@ -67,12 +66,12 @@ insert (maybeName, src) env =
           define (BS.pack name) src (display name env)
 
 
-define :: ByteString -> String -> Repl -> Repl
+define :: ByteString -> String -> Env -> Env
 define name body env =
     env { defs = Trie.insert name body (defs env) }
 
 
-display :: String -> Repl -> Repl
+display :: String -> Env -> Env
 display body env =
     define lastVar (format body) env
   where
@@ -80,6 +79,6 @@ display body env =
         BS.unpack lastVar ++ " =" ++ concatMap ("\n  "++) (lines body)
 
 
-noDisplay :: Repl -> Repl
+noDisplay :: Env -> Env
 noDisplay env =
     env { defs = Trie.delete lastVar (defs env) }
