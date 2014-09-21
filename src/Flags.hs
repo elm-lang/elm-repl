@@ -29,7 +29,7 @@ flags = Flags
 
         &= versionArg [explicit, name "version", name "v", summary version]
 
-        &= summary ("Elm REPL " ++ version ++ ", (c) Evan Czaplicki 2011-2013")
+        &= summary ("Elm REPL " ++ version ++ ", (c) Evan Czaplicki 2011-2014")
 
 helpMessage :: String
 helpMessage =
