@@ -71,19 +71,21 @@ xor True  = not
 xor False = id
 
 flagsInfo :: String
-flagsInfo = "Usage: flags [operation]\n\
-            \\n\
-            \  operations:\n\
-            \    add --src-dir=FILEPATH\tAdd a compiler flag\n\
-            \    remove --src-dir=FILEPATH\tRemove a compiler flag\n\
-            \    list\t\t\tList all flags that have been added\n\
-            \    clear\t\t\tClears all flags\n" 
+flagsInfo =
+    "Usage: flags [operation]\n\
+    \\n\
+    \  operations:\n\
+    \    add --src-dir=FILEPATH\tAdd a compiler flag\n\
+    \    remove --src-dir=FILEPATH\tRemove a compiler flag\n\
+    \    list\t\t\tList all flags that have been added\n\
+    \    clear\t\t\tClears all flags\n" 
 
 helpInfo :: String
-helpInfo = "General usage directions: <https://github.com/elm-lang/elm-repl#elm-repl>\n\
-           \Additional commands available from the prompt:\n\
-           \\n\
-           \  :help\t\t\tList available commands\n\
-           \  :flags\t\tManipulate flags sent to elm compiler\n\
-           \  :reset\t\tClears all previous imports\n\
-           \  :exit\t\t\tExits elm-repl\n"
+helpInfo =
+    "General usage directions: <https://github.com/elm-lang/elm-repl#elm-repl>\n\
+    \Additional commands available from the prompt:\n\
+    \\n\
+    \  :help\t\t\tList available commands\n\
+    \  :flags\t\tManipulate flags sent to elm compiler\n\
+    \  :reset\t\tClears all previous imports\n\
+    \  :exit\t\t\tExits elm-repl\n"
