@@ -25,7 +25,7 @@ repl = do
   case str' of
     Nothing -> return ExitSuccess
     Just str -> do
-      let action = Parse.input str
+      let action = Parse.inputToAction str
       result <- lift $ handle action
       case result of
         Just exit -> return exit
