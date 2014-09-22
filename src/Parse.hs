@@ -6,19 +6,21 @@ import qualified Data.List as List
 import Text.Parsec (Parsec, (<|>), anyChar, char, choice, eof, many, many1,
                     manyTill, parse, satisfy, space, spaces, string)
 
-import Action (Action, Command)
 import qualified Action as A
+
 
 type Parser = Parsec String ()
 
-inputToAction :: String -> Action
+
+inputToAction :: String -> A.Action
 inputToAction input =
     case parse result "" input of
       Right action -> action
       Left errorMessage ->
           A.Command . A.Help $ Just (show errorMessage)
 
-result :: Parser Action
+
+result :: Parser A.Action
 result =
   do  spaces
       skip <|> cmd <|> term
@@ -27,7 +29,8 @@ result =
     cmd  = char ':' >> A.Command <$> command
     term = A.Code . extractCode <$> many anyChar
 
-command :: Parser Command
+
+command :: Parser A.Command
 command =
   do  flag <- many1 notSpace
       spaces
@@ -42,7 +45,7 @@ command =
         eof >> return cmd
 
 
-flags :: Parser Command
+flags :: Parser A.Command
 flags =
   do  flag <- many1 notSpace
       case flag of
