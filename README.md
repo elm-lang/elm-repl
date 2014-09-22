@@ -1,4 +1,4 @@
-## Elm REPL [![Build Status](https://travis-ci.org/elm-lang/elm-repl.png?branch=dev)](https://travis-ci.org/elm-lang/elm-repl)
+## Elm REPL [![Build Status](https://travis-ci.org/elm-lang/elm-repl.png)](https://travis-ci.org/elm-lang/elm-repl)
 
 This tool lets you interact with values and functions directly.
 

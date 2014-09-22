@@ -1,35 +1,56 @@
-module Completion (complete)
-       where
+{-# LANGUAGE OverloadedStrings #-}
+module Completion (complete) where
 
-import Data.Functor        ((<$>))
-import Data.Trie           (Trie)
 import Control.Monad.State (get)
-import System.Console.Haskeline.Completion
-
 import qualified Data.ByteString.Char8 as BS
-import qualified Data.Trie             as Trie
-
-import Monad (ReplM)
+import qualified Data.Trie as Trie
+import System.Console.Haskeline.Completion (Completion(Completion), CompletionFunc, completeWord)
 
 import qualified Environment as Env
+import qualified Eval.Command as Eval
 
-complete, completeIdentifier :: CompletionFunc ReplM
-complete = completeQuotedWord Nothing "\"\'" (const $ return [] ) completeIdentifier
-completeIdentifier = completeWord Nothing " \t" lookupCompletions
 
-lookupCompletions :: String -> ReplM [Completion]
-lookupCompletions s = completions s . removeReserveds . Env.defs <$> get
-    where removeReserveds = Trie.delete Env.firstVar . Trie.delete Env.lastVar
+complete :: CompletionFunc Eval.Command
+complete =
+    completeWord Nothing " \t" lookupCompletions
 
-completions :: String -> Trie a  -> [Completion]
-completions s = Trie.lookupBy go (BS.pack s)
-  where go :: Maybe a -> Trie a -> [Completion]
-        go isElem suffixesTrie = maybeCurrent ++ suffixCompletions
-          where maybeCurrent = case isElem of
-                  Nothing -> []
-                  Just _  -> [current]
-                current = Completion s s True
 
-                suffixCompletions = map (suffixCompletion . BS.unpack) . Trie.keys $ suffixesTrie
-                suffixCompletion suf = Completion full full False
-                  where full = s ++ suf
+lookupCompletions :: String -> Eval.Command [Completion]
+lookupCompletions string =
+    do  env <- get
+        let defs = adjustDefs (Env.defs env)
+        return (completions string defs)
+    where
+      adjustDefs defs =
+          Trie.unionL cmds $
+          Trie.delete Env.firstVar $
+          Trie.delete Env.lastVar defs
+
+      cmds =
+          Trie.fromList
+              [ (":exit", "")
+              , (":reset", "")
+              , (":help", "")
+              , (":flags", "")
+              ]
+
+
+completions :: String -> Trie.Trie a  -> [Completion]
+completions string =
+    Trie.lookupBy go (BS.pack string)
+  where
+    go :: Maybe a -> Trie.Trie a -> [Completion]
+    go isElem suffixesTrie =
+        maybeCurrent ++ suffixCompletions
+      where
+        maybeCurrent =
+            case isElem of
+              Nothing -> []
+              Just _  -> [ Completion string string True ]
+
+        suffixCompletions =
+            map (suffixCompletion . BS.unpack) (Trie.keys suffixesTrie)
+
+        suffixCompletion suffix =
+            let full = string ++ suffix in
+            Completion full full False

@@ -1,1 +1,7 @@
 language: haskell
+install:
+  - git clone https://github.com/elm-lang/Elm.git
+  - cabal sandbox init
+  - cabal sandbox add-source Elm
+  - cabal install --only-dependencies --enable-tests
+script: cabal test
