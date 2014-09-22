@@ -38,8 +38,8 @@ lastVar :: ByteString
 lastVar = "deltron3030"
 
 
-toElm :: Env -> String
-toElm env =
+toElmCode :: Env -> String
+toElmCode env =
     unlines $ "module Repl where" : decls
   where
     decls =

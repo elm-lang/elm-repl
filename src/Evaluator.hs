@@ -22,7 +22,7 @@ evalPrint :: (Maybe A.DefName, String) -> ReplM ()
 evalPrint code =
  do modify $ Env.insert code 
     env <- get
-    liftIO $ writeFile tempElmPath (Env.toElm env)
+    liftIO $ writeFile tempElmPath (Env.toElmCode env)
     liftIO . runConts $ do
         types <- runCmd (Env.compilerPath env) (Env.flags env ++ elmArgs)
         liftIO $ reformatJS tempJsPath
