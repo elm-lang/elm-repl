@@ -4,15 +4,11 @@ This tool lets you interact with values and functions directly.
 
 ### Install
 
-Install [node.js](http://nodejs.org/download/) and then run:
+Install [Elm Platform][platform] to get `elm-repl`. Then make sure you have
+[node.js](http://nodejs.org/download/) installed because it is needed to
+evaluate the generated JS.
 
-```bash
-cabal update
-cabal install elm-repl
-```
-
-This package depends on the latest release of the Elm compiler, so
-it will install that automatically.
+[platform]: https://github.com/elm-lang/elm-platform#elm-platform
 
 ### Use
 
