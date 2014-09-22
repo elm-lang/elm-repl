@@ -11,7 +11,7 @@ import System.FilePath ((</>))
 import qualified Completion
 import qualified Flags
 import Monad (ReplM)
-import qualified Repl
+import qualified Loop
 
 
 main :: IO ()
@@ -21,7 +21,7 @@ main =
     cacheExisted <- Dir.doesDirectoryExist "cache"
     settings     <- mkSettings
     putStrLn welcomeMessage
-    exitCode <- ifJsInterpExists flags (Repl.run flags settings)
+    exitCode <- ifJsInterpExists flags (Loop.loop flags settings)
     unless buildExisted (removeDirectoryRecursiveIfExists "build")
     unless cacheExisted (removeDirectoryRecursiveIfExists "cache")
     Exit.exitWith exitCode

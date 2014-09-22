@@ -29,15 +29,15 @@ Executable elm-repl
   ghc-options:         -W
   Hs-Source-Dirs:      src
   Main-is:             Main.hs
-  other-modules:       Action,
-                       Command,
+  other-modules:       Command,
                        Completion,
                        Environment,
                        Evaluator,
                        Flags,
+                       Input,
+                       Loop,
                        Monad,
-                       Parse,
-                       Repl
+                       Parse
 
   Build-depends:       base >=4.2 && <5,
                        bytestring >= 0.9 && < 0.11,

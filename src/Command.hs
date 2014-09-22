@@ -5,12 +5,11 @@ import Control.Monad.Trans (liftIO)
 import qualified Data.List as List
 import System.Exit (ExitCode(ExitSuccess))
 
-import Action (Command)
-import qualified Action as Cmd
+import qualified Input as Cmd
 import qualified Environment as Env
 import Monad (ReplM)
 
-run :: Command -> ReplM (Maybe ExitCode)
+run :: Cmd.Command -> ReplM (Maybe ExitCode)
 run cmd =
   case cmd of
     Cmd.Exit ->

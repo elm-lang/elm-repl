@@ -7,7 +7,7 @@ import Data.Monoid ((<>))
 import Data.Trie (Trie) -- TODO: Switch to a Char-based trie.
 import qualified Data.Trie as Trie
 
-import qualified Action as A
+import qualified Input
 
 
 data Env = Env
@@ -46,23 +46,23 @@ toElmCode env =
         concatMap Trie.elems [ imports env, adts env, defs env ]
 
 
-insert :: (Maybe A.DefName, String) -> Env -> Env
+insert :: (Maybe Input.DefName, String) -> Env -> Env
 insert (maybeName, src) env =
     case maybeName of
       Nothing ->
           display src env
 
-      Just (A.Import name) ->
+      Just (Input.Import name) ->
           noDisplay $ env
               { imports = Trie.insert (BS.pack name) src (imports env)
               }
 
-      Just (A.DataDef name) ->
+      Just (Input.DataDef name) ->
           noDisplay $ env
               { adts = Trie.insert (BS.pack name) src (adts env)
               }
 
-      Just (A.VarDef name) ->
+      Just (Input.VarDef name) ->
           define (BS.pack name) src (display name env)
 
 

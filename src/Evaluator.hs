@@ -14,11 +14,11 @@ import System.FilePath ((</>), (<.>), replaceExtension)
 import System.IO (hPutStrLn, stderr, stdout)
 import System.Process (readProcessWithExitCode)
 
-import qualified Action as A
 import qualified Environment as Env
+import qualified Input
 import Monad (ReplM)
 
-evalPrint :: (Maybe A.DefName, String) -> ReplM ()
+evalPrint :: (Maybe Input.DefName, String) -> ReplM ()
 evalPrint code =
  do modify $ Env.insert code 
     env <- get

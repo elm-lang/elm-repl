@@ -1,21 +1,21 @@
-module Repl (run) where
+module Loop (loop) where
 
 import Control.Monad.Trans (lift, liftIO)
 import System.Console.Haskeline (InputT, MonadException, Settings, getInputLine,
                                  handleInterrupt, runInputT, withInterrupt)
 import System.Exit (ExitCode(ExitSuccess))
 
-import qualified Action as Act
 import qualified Command as Cmd
 import qualified Environment as Env
 import qualified Evaluator as Eval
 import qualified Flags
+import qualified Input
 import Monad (ReplM, runReplM)
 import qualified Parse
 
 
-run :: Flags.Flags -> Settings ReplM -> IO ExitCode
-run flags settings =
+loop :: Flags.Flags -> Settings ReplM -> IO ExitCode
+loop flags settings =
     runReplM flags initialEnv $ runInputT settings (withInterrupt acceptInput)
   where
     initialEnv =
@@ -30,23 +30,23 @@ acceptInput =
         return ExitSuccess
 
       Just userInput ->
-        do  let action = Parse.inputToAction userInput
+        do  let action = Parse.rawInput userInput
             result <- lift (handle action)
             case result of
               Just exit -> return exit
               Nothing   -> acceptInput
 
 
-handle :: Act.Action -> ReplM (Maybe ExitCode)
+handle :: Input.Input -> ReplM (Maybe ExitCode)
 handle action =
     case action of
-      Act.Command cmd ->
+      Input.Meta cmd ->
           Cmd.run cmd
 
-      Act.Skip ->
+      Input.Skip ->
           return Nothing
 
-      Act.Code src ->
+      Input.Code src ->
           do  handleInterrupt interruptedMsg (Eval.evalPrint src)
               return Nothing
     where

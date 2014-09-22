@@ -1,7 +1,7 @@
-module Action where
+module Input where
 
-data Action
-    = Command Command
+data Input
+    = Meta Command
     | Code (Maybe DefName, String)
     | Skip
     deriving (Show, Eq)

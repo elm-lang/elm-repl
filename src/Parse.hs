@@ -1,4 +1,4 @@
-module Parse (inputToAction) where
+module Parse (rawInput) where
 
 import qualified Data.Char as Char
 import Data.Functor ((<$>))
@@ -6,54 +6,54 @@ import qualified Data.List as List
 import Text.Parsec (Parsec, (<|>), anyChar, char, choice, eof, many, many1,
                     manyTill, parse, satisfy, space, spaces, string)
 
-import qualified Action as A
+import qualified Input
 
 
 type Parser = Parsec String ()
 
 
-inputToAction :: String -> A.Action
-inputToAction input =
+rawInput :: String -> Input.Input
+rawInput input =
     case parse result "" input of
       Right action -> action
       Left errorMessage ->
-          A.Command . A.Help $ Just (show errorMessage)
+          Input.Meta . Input.Help $ Just (show errorMessage)
 
 
-result :: Parser A.Action
+result :: Parser Input.Input
 result =
   do  spaces
       skip <|> cmd <|> term
   where
-    skip = eof >> return A.Skip
-    cmd  = char ':' >> A.Command <$> command
-    term = A.Code . extractCode <$> many anyChar
+    skip = eof >> return Input.Skip
+    cmd  = char ':' >> Input.Meta <$> command
+    term = Input.Code . extractCode <$> many anyChar
 
 
-command :: Parser A.Command
+command :: Parser Input.Command
 command =
   do  flag <- many1 notSpace
       spaces
       case flag of
-        "exit"  -> basicCommand A.Exit
-        "reset" -> basicCommand A.Reset
-        "help"  -> basicCommand (A.Help Nothing)
-        "flags" -> basicCommand (A.InfoFlags Nothing) <|> flags
-        _       -> return $ A.Help (Just flag)
+        "exit"  -> basicCommand Input.Exit
+        "reset" -> basicCommand Input.Reset
+        "help"  -> basicCommand (Input.Help Nothing)
+        "flags" -> basicCommand (Input.InfoFlags Nothing) <|> flags
+        _       -> return $ Input.Help (Just flag)
   where
     basicCommand cmd =
         eof >> return cmd
 
 
-flags :: Parser A.Command
+flags :: Parser Input.Command
 flags =
   do  flag <- many1 notSpace
       case flag of
-        "add"    -> srcDirFlag A.AddFlag
-        "remove" -> srcDirFlag A.RemoveFlag
-        "list"   -> return A.ListFlags
-        "clear"  -> return A.ClearFlags
-        _        -> return $ A.InfoFlags . Just $ flag
+        "add"    -> srcDirFlag Input.AddFlag
+        "remove" -> srcDirFlag Input.RemoveFlag
+        "list"   -> return Input.ListFlags
+        "clear"  -> return Input.ClearFlags
+        _        -> return $ Input.InfoFlags . Just $ flag
   where
     srcDirFlag ctor =
       do  many1 space
@@ -72,12 +72,12 @@ srcDir =
       return ("--src-dir=" ++ dir)
 
 
-extractCode :: String -> (Maybe A.DefName, String)
+extractCode :: String -> (Maybe Input.DefName, String)
 extractCode rawInput =
     (extractDefName rawInput, rawInput)
 
 
-extractDefName :: String -> Maybe A.DefName
+extractDefName :: String -> Maybe Input.DefName
 extractDefName src
     | List.isPrefixOf "import " src =
         let getFirstCap tokens =
@@ -86,11 +86,11 @@ extractDefName src
                       if Char.isUpper c then token else getFirstCap rest
                   _ -> src
         in
-            Just $ A.Import (getFirstCap (words src))
+            Just $ Input.Import (getFirstCap (words src))
 
     | List.isPrefixOf "data " src =
         let name = takeWhile (/=' ') . drop 5 $ src
-        in  Just $ A.DataDef name
+        in  Just $ Input.DataDef name
 
     | otherwise =
         case break (=='=') src of
@@ -99,7 +99,7 @@ extractDefName src
           (beforeEquals, _:c:_) ->
               if Char.isSymbol c || hasLet beforeEquals || hasBrace beforeEquals
                   then Nothing
-                  else Just $ A.VarDef (declName beforeEquals)
+                  else Just $ Input.VarDef (declName beforeEquals)
 
           _ -> error errorMessage
 

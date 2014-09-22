@@ -10,7 +10,7 @@ import Test.HUnit ((@=?))
 import qualified Test.HUnit.Base as HUnit
 import Test.QuickCheck
 
-import qualified Action as A
+import qualified Input as I
 import qualified Parse
 
 main :: IO ()
@@ -28,20 +28,20 @@ tests =
 cmdParseTests :: [Test]
 cmdParseTests =
     [ testGroup "Good commands tests"
-        [ testCase ":help parses"                    $ cmdParses (A.Help Nothing) ":help"
-        , testCase ":reset parses after whitespace"  $ cmdParses A.Reset "  :reset"
-        , testCase ":exit parses before whitespace"  $ cmdParses A.Exit ":exit   "
+        [ testCase ":help parses"                    $ cmdParses (I.Help Nothing) ":help"
+        , testCase ":reset parses after whitespace"  $ cmdParses I.Reset "  :reset"
+        , testCase ":exit parses before whitespace"  $ cmdParses I.Exit ":exit   "
         ]
     , testGroup ":flags parse tests"
-        [ testCase ":flags parses with Info"         $ cmdParses (A.InfoFlags Nothing) ":flags"
-        , testCase ":flags + space parses with Info" $ cmdParses (A.InfoFlags Nothing) ":flags    "
-        , testCase ":flags list parses"              $ cmdParses A.ListFlags ":flags list"
+        [ testCase ":flags parses with Info"         $ cmdParses (I.InfoFlags Nothing) ":flags"
+        , testCase ":flags + space parses with Info" $ cmdParses (I.InfoFlags Nothing) ":flags    "
+        , testCase ":flags list parses"              $ cmdParses I.ListFlags ":flags list"
         , testCase ":flags clear parses w/ whitespace between" $
-            cmdParses A.ClearFlags ":flags     clear"
+            cmdParses I.ClearFlags ":flags     clear"
         , testCase ":flags add source parses" $
-            cmdParses (A.AddFlag "--src-dir=\"\"") ":flags add --src-dir=\"\""
+            cmdParses (I.AddFlag "--src-dir=\"\"") ":flags add --src-dir=\"\""
         , testCase ":flags remove source parses" $
-            cmdParses (A.RemoveFlag "--src-dir=bleh") ":flags remove --src-dir=bleh"
+            cmdParses (I.RemoveFlag "--src-dir=bleh") ":flags remove --src-dir=bleh"
         ]
     , testGroup "Bad commands tests"
         [ testCase ":flagsgrbl triggers help" $ helpErr ":flagsg"
@@ -49,10 +49,10 @@ cmdParseTests =
         ]
     ]
   where
-    cmdParses cmd = actionParses (A.Command cmd)
+    cmdParses cmd = actionParses (I.Meta cmd)
     helpErr cmd =
-        case Parse.inputToAction cmd of
-          A.Command (A.Help message) ->
+        case Parse.rawInput cmd of
+          I.Meta (I.Help message) ->
               HUnit.assert (isJust message)
           action ->
               HUnit.assertFailure (errorMessage action)
@@ -64,9 +64,9 @@ codeParseTests :: [Test]
 codeParseTests =
     [ testCase "number parses" $ codeParses Nothing "3"
     , testCase "number parses after newlines" $ codeParses Nothing "\n\n3"
-    , testCase "data def parses"  $ codeParses (Just $ A.DataDef "Baz")  "data Baz = B { }"
-    , testCase "var def parses" $ codeParses (Just $ A.VarDef "x") "x = 3"
-    , testCase "var fun def parses" $ codeParses (Just $ A.VarDef "f") "f x = x"
+    , testCase "data def parses"  $ codeParses (Just $ I.DataDef "Baz")  "data Baz = B { }"
+    , testCase "var def parses" $ codeParses (Just $ I.VarDef "x") "x = 3"
+    , testCase "var fun def parses" $ codeParses (Just $ I.VarDef "f") "f x = x"
     ]
 
 skipTests :: [Test]
@@ -77,18 +77,18 @@ skipTests =
     , testProperty "never skip non-whitespace" dontSkipNonSpace
     ]
   where
-    skipped = actionParses A.Skip
+    skipped = actionParses I.Skip
 
 -- | Test Helpers
-codeParses :: Maybe A.DefName -> String -> HUnit.Assertion
+codeParses :: Maybe I.DefName -> String -> HUnit.Assertion
 codeParses name src =
-    actionParses (A.Code (name, trimSpace src)) src
+    actionParses (I.Code (name, trimSpace src)) src
   where
     trimSpace = dropWhile Char.isSpace
 
-actionParses :: A.Action -> String -> HUnit.Assertion
-actionParses v s =
-    v @=? Parse.inputToAction s
+actionParses :: I.Input -> String -> HUnit.Assertion
+actionParses input rawString =
+    input @=? Parse.rawInput rawString
 
 badCommandHelp :: Property
 badCommandHelp =
@@ -101,8 +101,8 @@ badCommandHelp =
             ]
 
     helpParses s =
-        case Parse.inputToAction (':':s) of
-          A.Command (A.Help (Just _)) -> True
+        case Parse.rawInput (':':s) of
+          I.Meta (I.Help (Just _)) -> True
           _ -> False
 
     -- | TODO: things like help3
@@ -119,14 +119,14 @@ badCommandHelp =
 
 skipAllSpace :: Property
 skipAllSpace =
-    forAll spaces $ (==A.Skip) . Parse.inputToAction
+    forAll spaces $ (==I.Skip) . Parse.rawInput
   where
     spaces =
         listOf . elements $ filter Char.isSpace [toEnum 0..]
 
 dontSkipNonSpace :: Property
 dontSkipNonSpace =
-    forAll notAllSpace $ (/= A.Skip) . Parse.inputToAction
+    forAll notAllSpace $ (/= I.Skip) . Parse.rawInput
   where
     notAllSpace =
         arbitrary `suchThat` (not . all Char.isSpace)
