@@ -147,13 +147,6 @@ scrapeOutputType rawTypeDump =
         \Please report this bug to <https://github.com/elm-lang/elm-repl/issues>"
 
 
-freshLine :: BS.ByteString -> (BS.ByteString, BS.ByteString)
-freshLine str
-    | BS.null rest' = (line, "")
-    | otherwise     = (line, BS.tail rest')
-  where
-    (line,rest') = BSC.break (=='\n') str
-
 removeIfExists :: FilePath -> IO ()
 removeIfExists fileName =
     do  exists <- doesFileExist fileName
