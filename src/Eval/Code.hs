@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Evaluator where
+module Eval.Code (eval) where
 
 import Control.Monad.Cont (ContT(ContT, runContT))
 import Control.Monad.RWS (get, modify)
@@ -15,11 +15,12 @@ import System.IO (hPutStrLn, stderr, stdout)
 import System.Process (readProcessWithExitCode)
 
 import qualified Environment as Env
+import qualified Eval.Command as Eval
 import qualified Input
-import Monad (ReplM)
 
-evalPrint :: (Maybe Input.DefName, String) -> ReplM ()
-evalPrint code =
+
+eval :: (Maybe Input.DefName, String) -> Eval.Command ()
+eval code =
  do modify $ Env.insert code 
     env <- get
     liftIO $ writeFile tempElmPath (Env.toElmCode env)

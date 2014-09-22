@@ -6,16 +6,16 @@ import qualified Data.ByteString.Char8 as BS
 import qualified Data.Trie as Trie
 import System.Console.Haskeline.Completion (Completion(Completion), CompletionFunc, completeWord)
 
-import Monad (ReplM)
 import qualified Environment as Env
+import qualified Eval.Command as Eval
 
 
-complete :: CompletionFunc ReplM
+complete :: CompletionFunc Eval.Command
 complete =
     completeWord Nothing " \t" lookupCompletions
 
 
-lookupCompletions :: String -> ReplM [Completion]
+lookupCompletions :: String -> Eval.Command [Completion]
 lookupCompletions string =
     do  env <- get
         let defs = adjustDefs (Env.defs env)

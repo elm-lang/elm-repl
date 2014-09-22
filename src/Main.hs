@@ -9,8 +9,8 @@ import qualified System.Exit as Exit
 import System.FilePath ((</>))
 
 import qualified Completion
+import qualified Eval.Command as Eval
 import qualified Flags
-import Monad (ReplM)
 import qualified Loop
 
 
@@ -41,7 +41,7 @@ getDataDir =
     return dir
 
 
-mkSettings :: IO (Settings ReplM)
+mkSettings :: IO (Settings Eval.Command)
 mkSettings =
  do dataDir <- getDataDir
     return $ Settings

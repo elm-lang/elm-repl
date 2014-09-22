@@ -1,16 +1,16 @@
-module Command where
+module Eval.Meta (eval) where
 
 import Control.Monad.State (get, modify)
 import Control.Monad.Trans (liftIO)
 import qualified Data.List as List
 import System.Exit (ExitCode(ExitSuccess))
 
-import qualified Input as Cmd
 import qualified Environment as Env
-import Monad (ReplM)
+import qualified Eval.Command as Eval
+import qualified Input as Cmd
 
-run :: Cmd.Command -> ReplM (Maybe ExitCode)
-run cmd =
+eval :: Cmd.Command -> Eval.Command (Maybe ExitCode)
+eval cmd =
   case cmd of
     Cmd.Exit ->
       return (Just ExitSuccess)

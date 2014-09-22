@@ -29,14 +29,15 @@ Executable elm-repl
   ghc-options:         -W
   Hs-Source-Dirs:      src
   Main-is:             Main.hs
-  other-modules:       Command,
-                       Completion,
+  other-modules:       Completion,
                        Environment,
-                       Evaluator,
+                       Eval.Code,
+                       Eval.Command,
+                       Eval.Input,
+                       Eval.Meta,
                        Flags,
                        Input,
                        Loop,
-                       Monad,
                        Parse
 
   Build-depends:       base >=4.2 && <5,
