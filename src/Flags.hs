@@ -3,10 +3,14 @@ module Flags where
 
 import Data.Version (showVersion)
 import qualified Paths_elm_repl as This
-import System.Console.CmdArgs (Data, Typeable, (&=), explicit, help, helpArg,
-                               name, summary, typFile, versionArg)
+import System.Console.CmdArgs
+    ( Data, Typeable, (&=), explicit, help, helpArg
+    , name, summary, typFile, versionArg
+    )
+
 
 version = showVersion This.version
+
 
 data Flags = Flags
     { compiler :: FilePath
@@ -14,11 +18,12 @@ data Flags = Flags
     }
     deriving (Data,Typeable,Show,Eq)
 
+
 flags :: Flags             
 flags = Flags
-    { compiler = "elm"
+    { compiler = "elm-make"
         &= typFile
-        &= help "Provide a path to a specific Elm compiler."
+        &= help "Provide a path to a specific version of elm-make."
     , interpreter = "node" 
         &= typFile
         &= help "Provide a path to a specific JavaScript interpreter (e.g. node, nodejs, ...)."
@@ -30,6 +35,7 @@ flags = Flags
         &= versionArg [explicit, name "version", name "v", summary version]
 
         &= summary ("Elm REPL " ++ version ++ ", (c) Evan Czaplicki 2011-2014")
+
 
 helpMessage :: String
 helpMessage =

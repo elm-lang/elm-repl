@@ -7,7 +7,6 @@ import Control.Monad.Trans (liftIO)
 import qualified Data.ByteString.Char8 as BSC
 import qualified Data.ByteString as BS
 import qualified Data.Char as Char
-import qualified Elm.Internal.Paths as Elm
 import System.Directory (doesFileExist, removeFile)
 import System.Exit (ExitCode(ExitFailure, ExitSuccess))
 import System.FilePath ((</>), (<.>), replaceExtension)
@@ -38,20 +37,18 @@ eval code =
         "repl-temp-000" <.> "elm"
 
     tempJsPath =
-        "build" </> replaceExtension tempElmPath "js"
+        replaceExtension tempElmPath "js"
     
     elmArgs =
-        [ "--make"
-        , "--only-js"
-        , "--print-types"
-        , tempElmPath
+        [ tempElmPath
+        , "--output=" ++ tempJsPath
         ]
 
 printIfNeeded :: BS.ByteString -> BS.ByteString -> IO ()
 printIfNeeded rawValue tipe =
     if BSC.null rawValue
       then return ()
-      else BSC.hPutStrLn stdout message
+      else BSC.hPutStrLn stdout rawValue {-- message
   where
     value = BSC.init rawValue
 
@@ -65,7 +62,7 @@ printIfNeeded rawValue tipe =
             [ if isTooLong then rawValue else value
             , tipe
             ]
-
+--}
 
 runCmd :: FilePath -> [String] -> ContT () IO BS.ByteString
 runCmd name args = ContT $ \ret ->
@@ -89,9 +86,7 @@ runCmd name args = ContT $ \ret ->
 
 reformatJS :: String -> IO ()
 reformatJS tempJsPath =
-  do  rts <- BS.readFile Elm.runtime
-      src <- BS.readFile tempJsPath
-      BS.length src `seq` BS.writeFile tempJsPath (BS.concat [rts,src,out])
+    BS.appendFile tempJsPath out
   where
     out =
         BS.concat
@@ -103,9 +98,9 @@ reformatJS tempJsPath =
             , "var window = window || {};"
             , "var context = { inputs:[], addListener:function(){}, node:{} };\n"
             , "var repl = Elm.Repl.make(context);\n"
-            , "var show = Elm.Native.Show.make(context).show;"
+            , "var toString = Elm.Native.Show.make(context).toString;"
             , "if ('", Env.lastVar, "' in repl)\n"
-            , "  console.log(show(repl.", Env.lastVar, "));"
+            , "  console.log(toString(repl.", Env.lastVar, "));"
             ]
 
 
