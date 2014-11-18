@@ -17,7 +17,8 @@ data Env = Env
     , imports :: Trie String
     , adts :: Trie String
     , defs :: Trie String
-    } deriving Show
+    }
+    deriving Show
 
 
 empty :: FilePath -> FilePath -> Env
