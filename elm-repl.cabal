@@ -1,77 +1,100 @@
-Name:                elm-repl
-Version:             0.3
-Synopsis:            a REPL for Elm
-Description:         A read-eval-print-loop (REPL) for evaluating Elm expressions,
-                     definitions, ADTs, and module imports. This tool is meant to
-                     help you play with small expressions and interact with
-                     functions deep inside of larger projects.
+Name: elm-repl
+Version: 0.3
 
-Homepage:            https://github.com/elm-lang/elm-repl
+Synopsis:
+  a REPL for Elm
 
-License:             BSD3
-License-file:        LICENSE
+Description:
+  A read-eval-print-loop (REPL) for evaluating Elm expressions,
+  definitions, ADTs, and module imports. This tool is meant to
+  help you play with small expressions and interact with
+  functions deep inside of larger projects.
 
-Author:              Evan Czaplicki
-Maintainer:          info@elm-lang.org
-Copyright:           Copyright: (c) 2011-2014 Evan Czaplicki
+Homepage:
+  https://github.com/elm-lang/elm-repl
 
-Category:            Tool
+License: BSD3
+License-file: LICENSE
 
-Build-type:          Simple
-Extra-source-files:  changelog.txt
-Cabal-version:       >=1.8
+Author:     Evan Czaplicki
+Maintainer: info@elm-lang.org
+Copyright:  Copyright: (c) 2011-2014 Evan Czaplicki
+
+Category: Tool
+
+Build-type:         Simple
+Extra-source-files: changelog.txt
+Cabal-version:      >=1.8
 
 source-repository head
   type:     git
   location: git://github.com/elm-lang/elm-repl.git
 
 Executable elm-repl
-  ghc-options:         -W
-  Hs-Source-Dirs:      src
-  Main-is:             Main.hs
-  other-modules:       Completion,
-                       Environment,
-                       Eval.Code,
-                       Eval.Command,
-                       Eval.Input,
-                       Eval.Meta,
-                       Flags,
-                       Input,
-                       Loop,
-                       Parse
+  ghc-options:
+    -W
 
-  Build-depends:       base >=4.2 && <5,
-                       bytestring >= 0.9 && < 0.11,
-                       bytestring-trie >= 0.2.2 && < 0.3,
-                       cmdargs >= 0.7 && < 0.11,
-                       directory >= 1 && < 2,
-                       elm-compiler,
-                       elm-package,
-                       filepath >= 1 && < 2,
-                       haskeline >= 0.7 && < 0.8,
-                       mtl >= 2 && < 3,
-                       parsec >= 3.1.1 && < 3.5,
-                       process >= 1 && < 2
+  Hs-Source-Dirs:
+    src
+
+  Main-is:
+    Main.hs
+
+  other-modules:
+    Completion,
+    Environment,
+    Eval.Code,
+    Eval.Command,
+    Eval.Input,
+    Eval.Meta,
+    Flags,
+    Input,
+    Loop,
+    Parse
+
+  Build-depends:
+    base >=4.2 && <5,
+    bytestring >= 0.9 && < 0.11,
+    bytestring-trie >= 0.2.2 && < 0.3,
+    cmdargs >= 0.7 && < 0.11,
+    directory >= 1 && < 2,
+    elm-compiler,
+    elm-package,
+    filepath >= 1 && < 2,
+    haskeline >= 0.7 && < 0.8,
+    mtl >= 2 && < 3,
+    parsec >= 3.1.1 && < 3.5,
+    process >= 1 && < 2
+
 
 Test-Suite test
-  Type:                exitcode-stdio-1.0
-  ghc-options:         -W
-  Hs-Source-Dirs:      tests, src
-  Main-is:             Main.hs
-  build-depends:       test-framework,
-                       test-framework-hunit,
-                       test-framework-quickcheck2 >= 0.3,
-                       HUnit,
-                       QuickCheck,
-                       base >=4.2 && <5,
-                       bytestring >= 0.9 && < 0.11,
-                       bytestring-trie >= 0.2.2 && < 0.3,
-                       cmdargs >= 0.7 && < 0.11,
-                       directory >= 1 && < 2,
-                       elm-compiler,
-                       elm-package,
-                       filepath >= 1 && < 2,
-                       haskeline >= 0.7 && < 0.8,
-                       mtl >= 2 && < 3,
-                       parsec >= 3.1.1 && < 3.5,
-                       process >= 1 && < 2
+  Type:
+    exitcode-stdio-1.0
+
+  ghc-options:
+    -W
+
+  Hs-Source-Dirs:
+    tests, src
+
+  Main-is:
+    Main.hs
+
+  build-depends:
+    test-framework,
+    test-framework-hunit,
+    test-framework-quickcheck2 >= 0.3,
+    HUnit,
+    QuickCheck,
+    base >=4.2 && <5,
+    bytestring >= 0.9 && < 0.11,
+    bytestring-trie >= 0.2.2 && < 0.3,
+    cmdargs >= 0.7 && < 0.11,
+    directory >= 1 && < 2,
+    elm-compiler,
+    elm-package,
+    filepath >= 1 && < 2,
+    haskeline >= 0.7 && < 0.8,
+    mtl >= 2 && < 3,
+    parsec >= 3.1.1 && < 3.5,
+    process >= 1 && < 2
