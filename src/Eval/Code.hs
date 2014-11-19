@@ -73,7 +73,7 @@ runCmd name args = ContT $ \ret ->
         Left (Utils.MissingExe msg) ->
             liftIO $ hPutStrLn stderr msg
 
-        Left (Utils.CommandFailed (out,err)) ->
+        Left (Utils.CommandFailed out err) ->
             liftIO $ hPutStrLn stderr (out ++ err)
 
 
