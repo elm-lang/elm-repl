@@ -8,14 +8,13 @@ import qualified Data.ByteString.Char8 as BSC
 import qualified Data.ByteString as BS
 import qualified Data.Char as Char
 import System.Directory (doesFileExist, removeFile)
-import System.Exit (ExitCode(ExitFailure, ExitSuccess))
-import System.FilePath ((</>), (<.>), replaceExtension)
+import System.FilePath ((<.>), replaceExtension)
 import System.IO (hPutStrLn, stderr, stdout)
-import System.Process (readProcessWithExitCode)
 
 import qualified Environment as Env
 import qualified Eval.Command as Eval
 import qualified Input
+import qualified Elm.Utils as Utils
 
 
 eval :: (Maybe Input.DefName, String) -> Eval.Command ()
@@ -66,22 +65,16 @@ printIfNeeded rawValue tipe =
 
 runCmd :: FilePath -> [String] -> ContT () IO BS.ByteString
 runCmd name args = ContT $ \ret ->
-  do  (exitCode, stdout, stderr) <-
-          liftIO $ readProcessWithExitCode name args ""
-      case exitCode of
-        ExitSuccess -> ret (BSC.pack stdout)
-        ExitFailure code
-            | code == 127  -> failure missingExe  -- UNIX
-            | code == 9009 -> failure missingExe  -- Windows
-            | otherwise    -> failure (stdout ++ stderr)
-  where
-    failure message = liftIO $ hPutStrLn stderr message
+  do  result <- liftIO (Utils.unwrappedRun name args)
+      case result of
+        Right stdout ->
+            ret (BSC.pack stdout)
 
-    missingExe =
-        unlines $
-        [ "Error: '" ++ name ++ "' command not found."
-        , "  Do you have it installed?"
-        , "  Can it be run from anywhere? I.e. is it on your PATH?" ]
+        Left (Utils.MissingExe msg) ->
+            liftIO $ hPutStrLn stderr msg
+
+        Left (Utils.CommandFailed (out,err)) ->
+            liftIO $ hPutStrLn stderr (out ++ err)
 
 
 reformatJS :: String -> IO ()
