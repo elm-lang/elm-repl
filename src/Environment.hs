@@ -39,6 +39,11 @@ lastVar :: ByteString
 lastVar = "deltron3030"
 
 
+lastVarString :: String
+lastVarString =
+    BS.unpack lastVar
+
+
 toElmCode :: Env -> String
 toElmCode env =
     unlines $ "module Repl where" : decls
@@ -77,7 +82,7 @@ display body env =
     define lastVar (format body) env
   where
     format body =
-        BS.unpack lastVar ++ " =" ++ concatMap ("\n  "++) (lines body)
+        lastVarString ++ " =" ++ concatMap ("\n  "++) (lines body)
 
 
 noDisplay :: Env -> Env

@@ -2,18 +2,27 @@
 module Eval.Code (eval) where
 
 import Control.Monad.Cont (ContT(ContT, runContT))
+import Control.Monad.Error (ErrorT, runErrorT, throwError)
 import Control.Monad.RWS (get, modify)
 import Control.Monad.Trans (liftIO)
-import qualified Data.ByteString.Char8 as BSC
-import qualified Data.ByteString as BS
-import qualified Data.Char as Char
+import qualified Data.Binary as Binary
+import qualified Data.ByteString.Lazy.Char8 as BS
+import qualified Data.List as List
+import qualified Data.Map as Map
 import System.Directory (doesFileExist, removeFile)
-import System.FilePath ((<.>), replaceExtension)
-import System.IO (hPutStrLn, stderr, stdout)
+import System.FilePath ((</>), (<.>), replaceExtension)
+import System.IO (hPutStrLn, stderr)
 
 import qualified Environment as Env
 import qualified Eval.Command as Eval
 import qualified Input
+
+import qualified Elm.Compiler.Module as Module
+import qualified Elm.Compiler.Type as Type
+import qualified Elm.Package.Description as Desc
+import qualified Elm.Package.Name as Name
+import qualified Elm.Package.Paths as Path
+import qualified Elm.Package.Version as Version
 import qualified Elm.Utils as Utils
 
 
@@ -23,11 +32,12 @@ eval code =
     env <- get
     liftIO $ writeFile tempElmPath (Env.toElmCode env)
     liftIO . runConts $ do
-        types <- runCmd (Env.compilerPath env) (Env.flags env ++ elmArgs)
-        liftIO $ reformatJS tempJsPath
+        runCmd (Env.compilerPath env) (Env.flags env ++ elmArgs)
+        liftIO $ addNodeRunner tempJsPath
         value <- runCmd (Env.interpreterPath env) [tempJsPath]
-        liftIO $ printIfNeeded value (scrapeOutputType types)
-    liftIO $ removeIfExists tempElmPath
+        liftIO $ printIfNeeded value
+        liftIO $ removeIfExists tempElmPath
+        liftIO $ removeIfExists tempJsPath
     return ()
   where
     runConts m = runContT m (\_ -> return ())
@@ -43,32 +53,31 @@ eval code =
         , "--output=" ++ tempJsPath
         ]
 
-printIfNeeded :: BS.ByteString -> BS.ByteString -> IO ()
-printIfNeeded rawValue tipe =
-    if BSC.null rawValue
-      then return ()
-      else BSC.hPutStrLn stdout rawValue {-- message
-  where
-    value = BSC.init rawValue
+printIfNeeded :: String -> IO ()
+printIfNeeded rawValue =
+  case rawValue of
+    "" -> return ()
+    _ ->
+      do  tipe <- getType
+          let value = init rawValue
 
-    isTooLong =
-        BSC.isInfixOf "\n" value
-        || BSC.isInfixOf "\n" tipe
-        || BSC.length value + BSC.length tipe > 80
+          let isTooLong =
+                List.isInfixOf "\n" value
+                  || List.isInfixOf "\n" tipe
+                  || length value + 3 + length tipe > 80
 
-    message =
-        BS.concat
-            [ if isTooLong then rawValue else value
-            , tipe
-            ]
---}
+          let message =
+                value ++ (if isTooLong then "\n    : " else " : ") ++ tipe
 
-runCmd :: FilePath -> [String] -> ContT () IO BS.ByteString
+          putStrLn message
+
+
+runCmd :: FilePath -> [String] -> ContT () IO String
 runCmd name args = ContT $ \ret ->
   do  result <- liftIO (Utils.unwrappedRun name args)
       case result of
         Right stdout ->
-            ret (BSC.pack stdout)
+            ret stdout
 
         Left (Utils.MissingExe msg) ->
             liftIO $ hPutStrLn stderr msg
@@ -77,62 +86,55 @@ runCmd name args = ContT $ \ret ->
             liftIO $ hPutStrLn stderr (out ++ err)
 
 
-reformatJS :: String -> IO ()
-reformatJS tempJsPath =
-    BS.appendFile tempJsPath out
-  where
-    out =
-        BS.concat
-            [ "process.on('uncaughtException', function(err) {\n"
-            , "  process.stderr.write(err.toString());\n"
-            , "  process.exit(1);\n"
-            , "});\n"
-            , "var document = document || {};"
-            , "var window = window || {};"
-            , "var context = { inputs:[], addListener:function(){}, node:{} };\n"
-            , "var repl = Elm.Repl.make(context);\n"
-            , "var toString = Elm.Native.Show.make(context).toString;"
-            , "if ('", Env.lastVar, "' in repl)\n"
-            , "  console.log(toString(repl.", Env.lastVar, "));"
-            ]
+addNodeRunner :: String -> IO ()
+addNodeRunner tempJsPath =
+    BS.appendFile tempJsPath nodeRunner
 
 
-scrapeOutputType :: BS.ByteString -> BS.ByteString
-scrapeOutputType rawTypeDump =
-    dropName (squashSpace relevantLines)
-  where
-    squashSpace :: [BS.ByteString] -> BS.ByteString
-    squashSpace multiLineTypeDecl =
-        BSC.unwords (BSC.words (BSC.unwords multiLineTypeDecl))
+nodeRunner :: BS.ByteString
+nodeRunner =
+    BS.pack $
+    concat
+    [ "process.on('uncaughtException', function(err) {\n\
+      \  process.stderr.write(err.toString());\n\
+      \  process.exit(1);\n\
+      \});\n\
+      \var document = document || {};\n\
+      \var window = window || {};\n\
+      \var context = { inputs:[], addListener:function(){}, node:{} };\n\
+      \var repl = Elm.Repl.make(context);\n\
+      \var toString = Elm.Native.Show.make(context).toString;\n"
+    , "if ('", Env.lastVarString, "' in repl) {\n"
+    , "  console.log(toString(repl.", Env.lastVarString, "));\n"
+    , "}"
+    ]
 
-    dropName :: BS.ByteString -> BS.ByteString
-    dropName typeDecl =
-        BSC.cons ' ' (BSC.dropWhile (/= ':') typeDecl)
 
-    relevantLines :: [BS.ByteString]
-    relevantLines =
-        takeType . dropWhile (not . isLastVar) $ BSC.lines rawTypeDump
+getType :: IO String
+getType =
+  do  result <- runErrorT getTypeHelp
+      case result of
+        Right tipe -> return tipe
+        Left _ -> return ""
 
-    isLastVar :: BS.ByteString -> Bool
-    isLastVar line =
-        BS.isPrefixOf Env.lastVar line
-        || BS.isPrefixOf (BS.append "Repl." Env.lastVar) line
 
-    takeType :: [BS.ByteString] -> [BS.ByteString]
-    takeType lines =
-        case lines of
-          [] -> error errorMessage
-          line : rest ->
-              line : takeWhile isMoreType rest
+getTypeHelp :: ErrorT String IO String
+getTypeHelp =
+  do  description <- Desc.read Path.description
+      binary <- liftIO (BS.readFile (interfacePath description))
+      let types = Module.interfaceTypes (Binary.decode binary)
+      case Map.lookup Env.lastVarString types of
+        Just tipe -> return (Type.toString tipe)
+        Nothing -> throwError "Type signature not found!"
 
-    isMoreType :: BS.ByteString -> Bool
-    isMoreType line =
-        not (BS.null line)
-        && Char.isSpace (BSC.head line)
 
-    errorMessage =
-        "Internal error in elm-repl function scrapeOutputType\n\
-        \Please report this bug to <https://github.com/elm-lang/elm-repl/issues>"
+interfacePath :: Desc.Description -> FilePath
+interfacePath description =
+    Path.stuffDirectory
+        </> "build-artifacts"
+        </> Name.toFilePath (Desc.name description)
+        </> Version.toString (Desc.version description)
+        </> "Repl.elmi"
 
 
 removeIfExists :: FilePath -> IO ()
