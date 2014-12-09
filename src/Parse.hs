@@ -88,7 +88,11 @@ extractDefName src
         in
             Just $ Input.Import (getFirstCap (words src))
 
-    | List.isPrefixOf "data " src =
+    | List.isPrefixOf "type alias " src =
+        let name = takeWhile (/=' ') . drop 11 $ src
+        in  Just $ Input.DataDef name
+
+    | List.isPrefixOf "type " src =
         let name = takeWhile (/=' ') . drop 5 $ src
         in  Just $ Input.DataDef name
 
