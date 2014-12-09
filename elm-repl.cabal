@@ -1,5 +1,5 @@
 Name: elm-repl
-Version: 0.3
+Version: 0.4
 
 Synopsis:
   a REPL for Elm
@@ -60,7 +60,7 @@ Executable elm-repl
     cmdargs >= 0.7 && < 0.11,
     containers,
     directory >= 1 && < 2,
-    elm-compiler,
+    elm-compiler >= 0.14 && < 0.15,
     elm-package,
     filepath >= 1 && < 2,
     haskeline >= 0.7 && < 0.8,
@@ -93,7 +93,7 @@ Test-Suite test
     bytestring-trie >= 0.2.2 && < 0.3,
     cmdargs >= 0.7 && < 0.11,
     directory >= 1 && < 2,
-    elm-compiler,
+    elm-compiler >= 0.14 && < 0.15,
     elm-package,
     filepath >= 1 && < 2,
     haskeline >= 0.7 && < 0.8,
