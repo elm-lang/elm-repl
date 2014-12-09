@@ -1,9 +1,9 @@
 module Main where
 
-import Control.Monad (unless, when)
+import Control.Monad (when)
 import qualified System.Console.CmdArgs as CmdArgs
-import System.Console.Haskeline (Settings(Settings, autoAddHistory, complete,
-                                          historyFile))
+import System.Console.Haskeline
+    (Settings(Settings, autoAddHistory, complete, historyFile))
 import qualified System.Directory as Dir
 import qualified System.Exit as Exit
 import System.FilePath ((</>))
@@ -17,13 +17,15 @@ import qualified Loop
 main :: IO ()
 main =
  do flags <- CmdArgs.cmdArgs Flags.flags
-    buildExisted <- Dir.doesDirectoryExist "build"
-    cacheExisted <- Dir.doesDirectoryExist "cache"
+    stuffExisted <- Dir.doesDirectoryExist "elm-stuff"
+    pkgJsonExisted <- Dir.doesFileExist "elm-package.json"
     settings     <- mkSettings
     putStrLn welcomeMessage
     exitCode <- ifJsInterpExists flags (Loop.loop flags settings)
-    unless buildExisted (removeDirectoryRecursiveIfExists "build")
-    unless cacheExisted (removeDirectoryRecursiveIfExists "cache")
+    when (not stuffExisted) (removeDirectoryRecursiveIfExists "elm-stuff")
+    when (not pkgJsonExisted) $
+      do  stillExists <- Dir.doesFileExist "elm-package.json"
+          when stillExists (Dir.removeFile "elm-package.json")
     Exit.exitWith exitCode
 
 
