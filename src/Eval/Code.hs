@@ -67,10 +67,12 @@ printIfNeeded rawValue =
                   || List.isInfixOf "\n" tipe
                   || length value + 3 + length tipe > 80
 
-          let message =
-                value ++ (if isTooLong then "\n    : " else " : ") ++ tipe
+          let tipeAnnotation =
+                if isTooLong
+                  then "\n    : " ++ List.intercalate "\n      " (lines tipe)
+                  else " : " ++ tipe
 
-          putStrLn message
+          putStrLn (value ++ tipeAnnotation)
 
 
 runCmd :: FilePath -> [String] -> ContT () IO String
