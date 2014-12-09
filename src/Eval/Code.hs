@@ -50,6 +50,7 @@ eval code =
     
     elmArgs =
         [ tempElmPath
+        , "--yes"
         , "--output=" ++ tempJsPath
         ]
 
