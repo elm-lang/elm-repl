@@ -8,6 +8,8 @@ import System.Console.CmdArgs
     , name, summary, typFile, versionArg
     )
 
+import qualified Elm.Compiler as Compiler
+
 
 version = showVersion This.version
 
@@ -34,7 +36,7 @@ flags = Flags
 
         &= versionArg [explicit, name "version", name "v", summary version]
 
-        &= summary ("Elm REPL " ++ version ++ ", (c) Evan Czaplicki 2011-2014")
+        &= summary ("Elm REPL " ++ version ++ " (Elm Platform " ++ Compiler.version ++ ")")
 
 
 helpMessage :: String

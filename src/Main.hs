@@ -12,6 +12,7 @@ import qualified Completion
 import qualified Eval.Command as Eval
 import qualified Flags
 import qualified Loop
+import qualified Elm.Compiler as Compiler
 
 
 main :: IO ()
@@ -19,7 +20,7 @@ main =
  do flags <- CmdArgs.cmdArgs Flags.flags
     stuffExisted <- Dir.doesDirectoryExist "elm-stuff"
     pkgJsonExisted <- Dir.doesFileExist "elm-package.json"
-    settings     <- mkSettings
+    settings <- mkSettings
     putStrLn welcomeMessage
     exitCode <- ifJsInterpExists flags (Loop.loop flags settings)
     when (not stuffExisted) (removeDirectoryRecursiveIfExists "elm-stuff")
@@ -31,8 +32,9 @@ main =
 
 welcomeMessage :: String
 welcomeMessage =
-    "Elm REPL " ++ Flags.version ++ " <https://github.com/elm-lang/elm-repl#elm-repl>\n\
-    \Type :help for help, :exit to exit"
+    "Elm REPL " ++ Flags.version ++ " (Elm Platform " ++ Compiler.version ++ ")\n\
+    \  See usage examples at <https://github.com/elm-lang/elm-repl>\n\
+    \  Type :help for help, :exit to exit"
 
 
 getDataDir :: IO FilePath
