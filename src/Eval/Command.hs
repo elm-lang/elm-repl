@@ -13,10 +13,10 @@ the Reader/Writer/State monad to keep track of some important details:
 
 -}
 type Command =
-	RWST Flags.Flags () Env.Env IO
+    RWST Flags.Flags () Env.Env IO
 
 
 run :: Flags.Flags -> Env.Env -> Command a -> IO a
 run flags env command =
     do  (x,_,_) <- runRWST command flags env
-    	return x
+        return x
