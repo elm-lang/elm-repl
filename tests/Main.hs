@@ -64,7 +64,7 @@ codeParseTests :: [Test]
 codeParseTests =
     [ testCase "number parses" $ codeParses Nothing "3"
     , testCase "number parses after newlines" $ codeParses Nothing "\n\n3"
-    , testCase "data def parses"  $ codeParses (Just $ I.DataDef "Baz")  "data Baz = B { }"
+    , testCase "data def parses"  $ codeParses (Just $ I.DataDef "Baz")  "type Baz = B { }"
     , testCase "var def parses" $ codeParses (Just $ I.VarDef "x") "x = 3"
     , testCase "var fun def parses" $ codeParses (Just $ I.VarDef "f") "f x = x"
     ]
