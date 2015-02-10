@@ -43,7 +43,7 @@ The same can be done with definitions and ADTs:
 > factorial 5   
 120 : number
 
-> data Either a b = Left a | Right b
+> type Either a b = Left a | Right b
 
 > case Left 32 of \
 |   Left n -> 2 * n \
