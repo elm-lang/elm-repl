@@ -28,7 +28,7 @@ import qualified Elm.Utils as Utils
 
 eval :: (Maybe Input.DefName, String) -> Eval.Command ()
 eval code =
- do modify $ Env.insert code 
+ do modify $ Env.insert code
     env <- get
     liftIO $ writeFile tempElmPath (Env.toElmCode env)
     liftIO . runConts $ do
@@ -41,13 +41,13 @@ eval code =
     return ()
   where
     runConts m = runContT m (\_ -> return ())
-    
+
     tempElmPath =
         "repl-temp-000" <.> "elm"
 
     tempJsPath =
         replaceExtension tempElmPath "js"
-    
+
     elmArgs =
         [ tempElmPath
         , "--yes"
