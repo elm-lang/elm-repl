@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts #-}
 module Eval.Meta (eval) where
 
 import Control.Monad.State (get, modify)
@@ -79,7 +80,7 @@ flagsInfo =
     \    add --src-dir=FILEPATH\tAdd a compiler flag\n\
     \    remove --src-dir=FILEPATH\tRemove a compiler flag\n\
     \    list\t\t\tList all flags that have been added\n\
-    \    clear\t\t\tClears all flags\n" 
+    \    clear\t\t\tClears all flags\n"
 
 helpInfo :: String
 helpInfo =
