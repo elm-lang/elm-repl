@@ -2,7 +2,8 @@
 module Eval.Code (eval) where
 
 import Control.Monad.Cont (ContT(ContT, runContT))
-import Control.Monad.Error (ErrorT, runErrorT, throwError)
+import Control.Monad.Except (ExceptT, runExceptT)
+import Control.Monad.Error.Class (throwError)
 import Control.Monad.RWS (get, modify)
 import Control.Monad.Trans (liftIO)
 import qualified Data.Binary as Binary
@@ -115,13 +116,13 @@ nodeRunner =
 
 getType :: IO String
 getType =
-  do  result <- runErrorT getTypeHelp
+  do  result <- runExceptT getTypeHelp
       case result of
         Right tipe -> return tipe
         Left _ -> return ""
 
 
-getTypeHelp :: ErrorT String IO String
+getTypeHelp :: ExceptT String IO String
 getTypeHelp =
   do  description <- Desc.read Path.description
       binary <- liftIO (BS.readFile (interfacePath description))
