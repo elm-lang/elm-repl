@@ -7,15 +7,14 @@ import qualified Data.Trie as Trie
 import System.Console.Haskeline.Completion (Completion(Completion), CompletionFunc, completeWord)
 
 import qualified Environment as Env
-import qualified Eval.Command as Eval
 
 
-complete :: CompletionFunc Eval.Command
+complete :: CompletionFunc Env.Task
 complete =
     completeWord Nothing " \t" lookupCompletions
 
 
-lookupCompletions :: String -> Eval.Command [Completion]
+lookupCompletions :: String -> Env.Task [Completion]
 lookupCompletions string =
     do  env <- get
         let defs = adjustDefs (Env.defs env)

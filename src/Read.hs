@@ -8,38 +8,38 @@ import Text.Parsec
   , manyTill, parse, satisfy, space, spaces, string
   )
 
-import qualified Input
+import qualified Environment as Env
 
 
 type Parser = Parsec String ()
 
 
-input :: String -> Input.Input
+input :: String -> Env.Input
 input string =
   case parse result "" string of
     Right action ->
         action
 
     Left errorMessage ->
-        Input.Meta (Input.Help (Just (show errorMessage)))
+        Env.Meta (Env.Help (Just (show errorMessage)))
 
 
-result :: Parser Input.Input
+result :: Parser Env.Input
 result =
   do  spaces
       choice
         [ do  eof
-              return Input.Skip
+              return Env.Skip
         , do  char ':'
-              Input.Meta <$> command
+              Env.Meta <$> command
         , do  string <- many anyChar
-              return (Input.Code (extractCode string))
+              return (Env.Code (extractCode string))
         ]
 
 
 -- PARSE META
 
-command :: Parser Input.Command
+command :: Parser Env.Config
 command =
   let
     ok cmd =
@@ -48,22 +48,22 @@ command =
   do  flag <- many1 notSpace
       spaces
       case flag of
-        "exit"  -> ok Input.Exit
-        "reset" -> ok Input.Reset
-        "help"  -> ok (Input.Help Nothing)
-        "flags" -> ok (Input.InfoFlags Nothing) <|> flags
-        _       -> return $ Input.Help (Just flag)
+        "exit"  -> ok Env.Exit
+        "reset" -> ok Env.Reset
+        "help"  -> ok (Env.Help Nothing)
+        "flags" -> ok (Env.InfoFlags Nothing) <|> flags
+        _       -> return $ Env.Help (Just flag)
 
 
-flags :: Parser Input.Command
+flags :: Parser Env.Config
 flags =
   do  flag <- many1 notSpace
       case flag of
-        "add"    -> srcDirFlag Input.AddFlag
-        "remove" -> srcDirFlag Input.RemoveFlag
-        "list"   -> return Input.ListFlags
-        "clear"  -> return Input.ClearFlags
-        _        -> return (Input.InfoFlags (Just flag))
+        "add"    -> srcDirFlag Env.AddFlag
+        "remove" -> srcDirFlag Env.RemoveFlag
+        "list"   -> return Env.ListFlags
+        "clear"  -> return Env.ClearFlags
+        _        -> return (Env.InfoFlags (Just flag))
   where
     srcDirFlag ctor =
       do  many1 space
@@ -84,12 +84,12 @@ srcDir =
 
 -- PARSE CODE
 
-extractCode :: String -> (Maybe Input.DefName, String)
+extractCode :: String -> (Maybe Env.DefName, String)
 extractCode rawInput =
     (extractDefName rawInput, rawInput)
 
 
-extractDefName :: String -> Maybe Input.DefName
+extractDefName :: String -> Maybe Env.DefName
 extractDefName src
   | List.isPrefixOf "import " src =
       let
@@ -99,19 +99,19 @@ extractDefName src
                   if Char.isUpper c then token else getFirstCap rest
               _ -> src
       in
-        Just (Input.Import (getFirstCap (words src)))
+        Just (Env.Import (getFirstCap (words src)))
 
   | List.isPrefixOf "type alias " src =
       let
         name = takeWhile (/=' ') (drop 11 src)
       in
-        Just (Input.DataDef name)
+        Just (Env.DataDef name)
 
   | List.isPrefixOf "type " src =
       let
         name = takeWhile (/=' ') (drop 5 src)
       in
-        Just (Input.DataDef name)
+        Just (Env.DataDef name)
 
   | otherwise =
       case break (=='=') src of
@@ -121,7 +121,7 @@ extractDefName src
         (beforeEquals, _:c:_) ->
             if Char.isSymbol c || hasLet beforeEquals || hasBrace beforeEquals
               then Nothing
-              else Just (Input.VarDef (declName beforeEquals))
+              else Just (Env.VarDef (declName beforeEquals))
 
         _ ->
             Nothing

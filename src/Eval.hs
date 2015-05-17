@@ -4,22 +4,21 @@ import Control.Monad.Trans (liftIO)
 import System.Console.Haskeline (handleInterrupt)
 import qualified System.Exit as Exit
 
+import qualified Environment as Env
 import qualified Eval.Code as Code
-import qualified Eval.Command as Eval
 import qualified Eval.Meta as Meta
-import qualified Input
 
 
-eval :: Input.Input -> Eval.Command (Maybe Exit.ExitCode)
+eval :: Env.Input -> Env.Task (Maybe Exit.ExitCode)
 eval action =
     case action of
-      Input.Meta cmd ->
+      Env.Meta cmd ->
           Meta.eval cmd
 
-      Input.Skip ->
+      Env.Skip ->
           return Nothing
 
-      Input.Code code ->
+      Env.Code code ->
           do  handleInterrupt interruptedMsg (Code.eval code)
               return Nothing
     where

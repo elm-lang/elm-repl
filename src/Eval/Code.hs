@@ -13,8 +13,6 @@ import System.FilePath ((</>), (<.>), replaceExtension)
 import System.IO (hPutStrLn, stderr)
 
 import qualified Environment as Env
-import qualified Eval.Command as Eval
-import qualified Input
 
 import qualified Elm.Compiler.Module as Module
 import qualified Elm.Compiler.Type as Type
@@ -25,7 +23,7 @@ import qualified Elm.Package.Version as Version
 import qualified Elm.Utils as Utils
 
 
-eval :: (Maybe Input.DefName, String) -> Eval.Command ()
+eval :: (Maybe Env.DefName, String) -> Env.Task ()
 eval code =
   do  oldEnv <- State.get
       let newEnv = Env.insert code oldEnv

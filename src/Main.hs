@@ -9,7 +9,7 @@ import qualified System.Exit as Exit
 import System.FilePath ((</>))
 
 import qualified Completion
-import qualified Eval.Command as Eval
+import qualified Environment as Env
 import qualified Flags
 import qualified Loop
 import qualified Elm.Compiler as Compiler
@@ -45,7 +45,7 @@ getDataDir =
     return dir
 
 
-mkSettings :: IO (Settings Eval.Command)
+mkSettings :: IO (Settings Env.Task)
 mkSettings =
  do dataDir <- getDataDir
     return $ Settings
@@ -73,7 +73,7 @@ ifJsInterpExists flags doSomeStuff =
         \    You can install node.js from <http://nodejs.org/>. If it is already\n\
         \    installed but has a different name, use the --interpreter flag."
 
-        
+
 removeDirectoryRecursiveIfExists :: FilePath -> IO ()
 removeDirectoryRecursiveIfExists path =
  do exists <- Dir.doesDirectoryExist path

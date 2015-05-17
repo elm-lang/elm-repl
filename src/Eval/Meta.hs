@@ -7,39 +7,38 @@ import qualified Data.List as List
 import System.Exit (ExitCode(ExitSuccess))
 
 import qualified Environment as Env
-import qualified Eval.Command as Eval
-import qualified Input as Cmd
 
-eval :: Cmd.Command -> Eval.Command (Maybe ExitCode)
-eval cmd =
-  case cmd of
-    Cmd.Exit ->
+
+eval :: Env.Config -> Env.Task (Maybe ExitCode)
+eval config =
+  case config of
+    Env.Exit ->
       return (Just ExitSuccess)
 
-    Cmd.Help m ->
+    Env.Help m ->
         do displayErr "Bad command\n" m
            display helpInfo
 
-    Cmd.InfoFlags m ->
+    Env.InfoFlags m ->
         do displayErr "Bad flag\n" m
            display flagsInfo
 
-    Cmd.ListFlags ->
+    Env.ListFlags ->
         display . unlines . Env.flags =<< get
 
-    Cmd.AddFlag flag ->
+    Env.AddFlag flag ->
         modifyIfPresent True flag "Added " "Flag already added!" $ \env ->
             env { Env.flags = Env.flags env ++ [flag] }
 
-    Cmd.RemoveFlag flag ->
+    Env.RemoveFlag flag ->
         modifyIfPresent False flag "Removed flag " "No such flag." $ \env ->
             env {Env.flags = List.delete flag $ Env.flags env}
 
-    Cmd.Reset ->
+    Env.Reset ->
         modifyAlways "Environment Reset" $ \env ->
           Env.empty (Env.compilerPath env) (Env.interpreterPath env)
 
-    Cmd.ClearFlags ->
+    Env.ClearFlags ->
         modifyAlways "All flags cleared" $ \env ->
             env {Env.flags = []}
 

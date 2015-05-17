@@ -7,20 +7,19 @@ import System.Exit (ExitCode(ExitSuccess))
 
 import qualified Environment as Env
 import qualified Eval
-import qualified Eval.Command as Command
 import qualified Flags
 import qualified Read
 
 
-loop :: Flags.Flags -> Settings Command.Command -> IO ExitCode
+loop :: Flags.Flags -> Settings Env.Task -> IO ExitCode
 loop flags settings =
-    Command.run flags initialEnv $ runInputT settings (withInterrupt acceptInput)
+    Env.run flags initialEnv $ runInputT settings (withInterrupt acceptInput)
   where
     initialEnv =
         Env.empty (Flags.compiler flags) (Flags.interpreter flags)
 
 
-acceptInput :: InputT Command.Command ExitCode
+acceptInput :: InputT Env.Task ExitCode
 acceptInput =
  do rawInput <- handleInterrupt (return (Just "")) getInput
     case rawInput of
