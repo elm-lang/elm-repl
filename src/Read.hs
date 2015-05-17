@@ -8,6 +8,7 @@ import Text.Parsec
   , manyTill, parse, satisfy, space, spaces, string
   )
 
+import qualified Elm.Utils as Utils
 import qualified Environment as Env
 
 
@@ -114,36 +115,4 @@ extractDefName src
         Just (Env.DataDef name)
 
   | otherwise =
-      case break (=='=') src of
-        (_,"") ->
-            Nothing
-
-        (beforeEquals, _:c:_) ->
-            if Char.isSymbol c || hasLet beforeEquals || hasBrace beforeEquals
-              then Nothing
-              else Just (Env.VarDef (declName beforeEquals))
-
-        _ ->
-            Nothing
-
-      where
-        declName pattern =
-            case takeWhile Char.isSymbol $ dropWhile (not . Char.isSymbol) pattern of
-              "" -> takeWhile (/=' ') pattern
-              op -> op
-
-
-hasLet :: String -> Bool
-hasLet body =
-    elem "let" (map token (words body))
-  where
-    isVarChar c =
-        Char.isAlpha c || Char.isDigit c || elem c "_'"
-
-    token word =
-        takeWhile isVarChar $ dropWhile (not . Char.isAlpha) word
-
-
-hasBrace :: String -> Bool
-hasBrace body =
-    elem '{' body
+      Env.VarDef <$> Utils.isDeclaration src
