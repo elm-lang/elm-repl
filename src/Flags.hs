@@ -11,7 +11,9 @@ import System.Console.CmdArgs
 import qualified Elm.Compiler as Compiler
 
 
-version = showVersion This.version
+version :: String
+version =
+  showVersion This.version
 
 
 data Flags = Flags
@@ -21,22 +23,32 @@ data Flags = Flags
     deriving (Data,Typeable,Show,Eq)
 
 
-flags :: Flags             
+flags :: Flags
 flags = Flags
-    { compiler = "elm-make"
-        &= typFile
-        &= help "Provide a path to a specific version of elm-make."
-    , interpreter = "node" 
-        &= typFile
-        &= help "Provide a path to a specific JavaScript interpreter (e.g. node, nodejs, ...)."
-    }
-        &= help helpMessage
+  { compiler = "elm-make"
+      &= typFile
+      &= help "Provide a path to a specific version of elm-make."
 
-        &= helpArg [explicit, name "help", name "h"]
+  , interpreter = "node"
+      &= typFile
+      &= help "Provide a path to a specific JavaScript interpreter (e.g. node, nodejs, ...)."
+  }
+  &= help helpMessage
 
-        &= versionArg [explicit, name "version", name "v", summary version]
+  &= helpArg
+      [ explicit
+      , name "help"
+      , name "h"
+      ]
 
-        &= summary ("Elm REPL " ++ version ++ " (Elm Platform " ++ Compiler.version ++ ")")
+  &= versionArg
+      [ explicit
+      , name "version"
+      , name "v"
+      , summary version
+      ]
+
+  &= summary ("Elm REPL " ++ version ++ " (Elm Platform " ++ Compiler.version ++ ")")
 
 
 helpMessage :: String
