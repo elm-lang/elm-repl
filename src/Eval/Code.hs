@@ -1,9 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Eval.Code (eval) where
 
-import Control.Monad.Cont (ContT(ContT, runContT))
-import Control.Monad.Error (ErrorT, runErrorT, throwError)
-import Control.Monad.RWS (get, modify)
+import Control.Monad.Except (ExceptT, runExceptT, throwError)
+import qualified Control.Monad.RWS as State
 import Control.Monad.Trans (liftIO)
 import qualified Data.Binary as Binary
 import qualified Data.ByteString.Lazy.Char8 as BS
@@ -28,36 +27,50 @@ import qualified Elm.Utils as Utils
 
 eval :: (Maybe Input.DefName, String) -> Eval.Command ()
 eval code =
- do modify $ Env.insert code
-    env <- get
-    liftIO $ writeFile tempElmPath (Env.toElmCode env)
-    liftIO . runConts $ do
-        runCmd (Env.compilerPath env) (Env.flags env ++ elmArgs)
-        liftIO $ addNodeRunner tempJsPath
-        value <- runCmd (Env.interpreterPath env) [tempJsPath]
-        liftIO $ printIfNeeded value
-        liftIO $ removeIfExists tempElmPath
-        liftIO $ removeIfExists tempJsPath
-    return ()
-  where
-    runConts m = runContT m (\_ -> return ())
+  do  oldEnv <- State.get
+      let newEnv = Env.insert code oldEnv
 
+      liftIO $ writeFile tempElmPath (Env.toElmCode newEnv)
+
+      result <- liftIO (runExceptT (tryCompile tempElmPath tempJsPath newEnv))
+
+      liftIO $ removeIfExists tempElmPath
+      liftIO $ removeIfExists tempJsPath
+
+      case result of
+        Left msg ->
+            liftIO (hPutStrLn stderr msg)
+
+        Right () ->
+            State.put newEnv
+  where
     tempElmPath =
         "repl-temp-000" <.> "elm"
 
     tempJsPath =
         replaceExtension tempElmPath "js"
 
+
+tryCompile :: FilePath -> FilePath -> Env.Env -> ExceptT String IO ()
+tryCompile tempElmPath tempJsPath env =
+  do  run (Env.compilerPath env) (Env.flags env ++ elmArgs)
+      liftIO $ BS.appendFile tempJsPath nodeRunner
+      value <- run (Env.interpreterPath env) [tempJsPath]
+      liftIO $ printIfNeeded value
+  where
     elmArgs =
-        [ tempElmPath
-        , "--yes"
-        , "--output=" ++ tempJsPath
-        ]
+      [ tempElmPath
+      , "--yes"
+      , "--output=" ++ tempJsPath
+      ]
+
 
 printIfNeeded :: String -> IO ()
 printIfNeeded rawValue =
   case rawValue of
-    "" -> return ()
+    "" ->
+      return ()
+
     _ ->
       do  tipe <- getType
           let value = init rawValue
@@ -75,23 +88,18 @@ printIfNeeded rawValue =
           putStrLn (value ++ tipeAnnotation)
 
 
-runCmd :: FilePath -> [String] -> ContT () IO String
-runCmd name args = ContT $ \ret ->
+run :: FilePath -> [String] -> ExceptT String IO String
+run name args =
   do  result <- liftIO (Utils.unwrappedRun name args)
       case result of
         Right stdout ->
-            ret stdout
+            return stdout
 
         Left (Utils.MissingExe msg) ->
-            liftIO $ hPutStrLn stderr msg
+            throwError msg
 
-        Left (Utils.CommandFailed out err) ->
-            liftIO $ hPutStrLn stderr (out ++ err)
-
-
-addNodeRunner :: String -> IO ()
-addNodeRunner tempJsPath =
-    BS.appendFile tempJsPath nodeRunner
+        Left (Utils.CommandFailed _out err) ->
+            throwError err
 
 
 nodeRunner :: BS.ByteString
@@ -115,13 +123,13 @@ nodeRunner =
 
 getType :: IO String
 getType =
-  do  result <- runErrorT getTypeHelp
+  do  result <- runExceptT getTypeHelp
       case result of
         Right tipe -> return tipe
         Left _ -> return ""
 
 
-getTypeHelp :: ErrorT String IO String
+getTypeHelp :: ExceptT String IO String
 getTypeHelp =
   do  description <- Desc.read Path.description
       binary <- liftIO (BS.readFile (interfacePath description))
