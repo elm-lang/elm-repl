@@ -6,7 +6,7 @@ import System.Console.Haskeline (InputT, MonadException, Settings, getInputLine,
 import System.Exit (ExitCode(ExitSuccess))
 
 import qualified Environment as Env
-import qualified Eval.Input as Input
+import qualified Eval
 import qualified Eval.Command as Command
 import qualified Flags
 import qualified Read
@@ -27,9 +27,9 @@ acceptInput =
       Nothing ->
         return ExitSuccess
 
-      Just userInput ->
-        do  let input = Read.input userInput
-            result <- lift (Input.eval input)
+      Just string ->
+        do  let input = Read.input string
+            result <- lift (Eval.eval input)
             case result of
               Just exit -> return exit
               Nothing   -> acceptInput

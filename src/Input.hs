@@ -1,10 +1,12 @@
 module Input where
 
+
 data Input
     = Meta Command
     | Code (Maybe DefName, String)
     | Skip
     deriving (Show, Eq)
+
 
 data Command
     = AddFlag String
@@ -17,6 +19,7 @@ data Command
     | Exit
     | Reset
     deriving (Show, Eq)
+
 
 data DefName
     = VarDef  String

@@ -1,4 +1,4 @@
-module Eval.Input (eval) where
+module Eval (eval) where
 
 import Control.Monad.Trans (liftIO)
 import System.Console.Haskeline (handleInterrupt)
