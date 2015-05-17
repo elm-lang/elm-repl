@@ -9,7 +9,7 @@ import qualified Environment as Env
 import qualified Eval.Input as Input
 import qualified Eval.Command as Command
 import qualified Flags
-import qualified Parse
+import qualified Read
 
 
 loop :: Flags.Flags -> Settings Command.Command -> IO ExitCode
@@ -28,7 +28,7 @@ acceptInput =
         return ExitSuccess
 
       Just userInput ->
-        do  let input = Parse.rawInput userInput
+        do  let input = Read.input userInput
             result <- lift (Input.eval input)
             case result of
               Just exit -> return exit

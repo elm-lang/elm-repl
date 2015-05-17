@@ -50,7 +50,7 @@ Executable elm-repl
     Flags,
     Input,
     Loop,
-    Parse
+    Read
 
   Build-depends:
     base >=4.2 && <5,
