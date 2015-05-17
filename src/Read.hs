@@ -113,20 +113,18 @@ extractDefName src
 
   | otherwise =
       case break (=='=') src of
-        (_,"") -> Nothing
+        (_,"") ->
+            Nothing
 
         (beforeEquals, _:c:_) ->
             if Char.isSymbol c || hasLet beforeEquals || hasBrace beforeEquals
                 then Nothing
                 else Just $ Input.VarDef (declName beforeEquals)
 
-        _ -> error errorMessage
+        _ ->
+            Nothing
 
       where
-        errorMessage =
-            "Internal error in elm-repl function Parse.mkCode\n\
-            \Please submit bug report to <https://github.com/elm-lang/elm-repl/issues>"
-
         declName pattern =
             case takeWhile Char.isSymbol $ dropWhile (not . Char.isSymbol) pattern of
               "" -> takeWhile (/=' ') pattern
