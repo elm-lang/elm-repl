@@ -31,16 +31,16 @@ result =
         [ do  eof
               return Env.Skip
         , do  char ':'
-              Env.Meta <$> command
+              Env.Meta <$> config
         , do  string <- many anyChar
               return (Env.Code (extractCode string))
         ]
 
 
--- PARSE META
+-- PARSE CONFIG
 
-command :: Parser Env.Config
-command =
+config :: Parser Env.Config
+config =
   let
     ok cmd =
         eof >> return cmd
