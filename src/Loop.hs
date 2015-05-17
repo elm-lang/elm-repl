@@ -1,8 +1,10 @@
 module Loop (loop) where
 
 import Control.Monad.Trans (lift)
-import System.Console.Haskeline (InputT, MonadException, Settings, getInputLine,
-                                 handleInterrupt, runInputT, withInterrupt)
+import System.Console.Haskeline
+  ( InputT, MonadException, Settings, getInputLine
+  , handleInterrupt, runInputT, withInterrupt
+  )
 import System.Exit (ExitCode(ExitSuccess))
 
 import qualified Environment as Env
