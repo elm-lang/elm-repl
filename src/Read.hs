@@ -3,8 +3,10 @@ module Read (input) where
 import qualified Data.Char as Char
 import Data.Functor ((<$>))
 import qualified Data.List as List
-import Text.Parsec (Parsec, (<|>), anyChar, char, choice, eof, many, many1,
-                    manyTill, parse, satisfy, space, spaces, string)
+import Text.Parsec
+  ( Parsec, (<|>), anyChar, char, choice, eof, many, many1
+  , manyTill, parse, satisfy, space, spaces, string
+  )
 
 import qualified Input
 
@@ -118,8 +120,8 @@ extractDefName src
 
         (beforeEquals, _:c:_) ->
             if Char.isSymbol c || hasLet beforeEquals || hasBrace beforeEquals
-                then Nothing
-                else Just $ Input.VarDef (declName beforeEquals)
+              then Nothing
+              else Just (Input.VarDef (declName beforeEquals))
 
         _ ->
             Nothing
@@ -133,7 +135,7 @@ extractDefName src
 
 hasLet :: String -> Bool
 hasLet body =
-    elem "let" $ map token (words body)
+    elem "let" (map token (words body))
   where
     isVarChar c =
         Char.isAlpha c || Char.isDigit c || elem c "_'"
