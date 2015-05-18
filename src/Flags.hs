@@ -18,7 +18,7 @@ version =
 
 data Flags = Flags
     { compiler :: FilePath
-    , interpreter :: FilePath
+    , interpreter :: Maybe FilePath
     }
     deriving (Data,Typeable,Show,Eq)
 
@@ -29,7 +29,7 @@ flags = Flags
       &= typFile
       &= help "Provide a path to a specific version of elm-make."
 
-  , interpreter = "node"
+  , interpreter = Nothing
       &= typFile
       &= help "Provide a path to a specific JavaScript interpreter (e.g. node, nodejs, ...)."
   }

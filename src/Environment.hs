@@ -8,18 +8,16 @@ import Data.Monoid ((<>))
 import Data.Trie (Trie) -- TODO: Switch to a Char-based trie.
 import qualified Data.Trie as Trie
 
-import qualified Flags
-
 
 -- TASKS
 
 type Task =
-    RWST Flags.Flags () Env IO
+    RWST () () Env IO
 
 
-run :: Flags.Flags -> Env -> Task a -> IO a
-run flags env command =
-    do  (x,_,_) <- runRWST command flags env
+run :: Env -> Task a -> IO a
+run env task =
+    do  (x,_,_) <- runRWST task () env
         return x
 
 
@@ -76,11 +74,13 @@ empty compiler interpreter =
 
 
 firstVar :: ByteString
-firstVar = "tsol"
+firstVar =
+    "tsol"
 
 
 lastVar :: ByteString
-lastVar = "deltron3030"
+lastVar =
+    "deltron3030"
 
 
 lastVarString :: String

@@ -9,16 +9,12 @@ import System.Exit (ExitCode(ExitSuccess))
 
 import qualified Environment as Env
 import qualified Eval
-import qualified Flags
 import qualified Read
 
 
-loop :: Flags.Flags -> Settings Env.Task -> IO ExitCode
-loop flags settings =
-    Env.run flags initialEnv $ runInputT settings (withInterrupt acceptInput)
-  where
-    initialEnv =
-        Env.empty (Flags.compiler flags) (Flags.interpreter flags)
+loop :: Env.Env -> Settings Env.Task -> IO ExitCode
+loop env settings =
+    Env.run env $ runInputT settings (withInterrupt acceptInput)
 
 
 acceptInput :: InputT Env.Task ExitCode
