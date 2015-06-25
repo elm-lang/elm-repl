@@ -131,7 +131,7 @@ getTypeHelp :: ExceptT String IO String
 getTypeHelp =
   do  description <- Desc.read Path.description
       binary <- liftIO (BS.readFile (interfacePath description))
-      let types = Module.interfaceTypes (Binary.decode binary)
+      let types = Module.interfaceAliasedTypes (Binary.decode binary)
       case Map.lookup Env.lastVarString types of
         Just tipe -> return (Type.toString tipe)
         Nothing -> throwError "Type signature not found!"
