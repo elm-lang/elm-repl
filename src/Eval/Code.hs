@@ -109,7 +109,7 @@ nodeRunner =
       \  process.exit(1);\n\
       \});\n\
       \var document = document || {};\n\
-      \var window = window || {};\n\
+      \var window = global || {};\n\
       \var context = { inputs:[], addListener:function(){}, node:{} };\n\
       \var repl = Elm.Repl.make(context);\n\
       \var toString = Elm.Native.Show.make(context).toString;\n"
