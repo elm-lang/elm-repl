@@ -16,10 +16,9 @@ import qualified Environment as Env
 
 import qualified Elm.Compiler.Module as Module
 import qualified Elm.Compiler.Type as Type
+import qualified Elm.Package as Pkg
 import qualified Elm.Package.Description as Desc
-import qualified Elm.Package.Name as Name
 import qualified Elm.Package.Paths as Path
-import qualified Elm.Package.Version as Version
 import qualified Elm.Utils as Utils
 
 
@@ -141,8 +140,8 @@ interfacePath :: Desc.Description -> FilePath
 interfacePath description =
     Path.stuffDirectory
         </> "build-artifacts"
-        </> Name.toFilePath (Desc.name description)
-        </> Version.toString (Desc.version description)
+        </> Pkg.toFilePath (Desc.name description)
+        </> Pkg.versionToString (Desc.version description)
         </> "Repl.elmi"
 
 

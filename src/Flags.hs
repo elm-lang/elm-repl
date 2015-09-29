@@ -9,11 +9,12 @@ import System.Console.CmdArgs
     )
 
 import qualified Elm.Compiler as Compiler
+import qualified Elm.Package as Pkg
 
 
 version :: String
 version =
-  showVersion This.version
+  Pkg.versionToString Compiler.version
 
 
 data Flags = Flags
@@ -48,7 +49,7 @@ flags = Flags
       , summary version
       ]
 
-  &= summary ("Elm REPL " ++ version ++ " (Elm Platform " ++ Compiler.version ++ ")")
+  &= summary ("elm repl " ++ version)
 
 
 helpMessage :: String

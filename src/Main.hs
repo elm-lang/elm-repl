@@ -15,6 +15,7 @@ import qualified Environment as Env
 import qualified Flags
 import qualified Loop
 import qualified Elm.Compiler as Compiler
+import qualified Elm.Package as Pkg
 
 
 main :: IO ()
@@ -87,9 +88,13 @@ exeNotFound stuff =
 
 welcomeMessage :: String
 welcomeMessage =
-    "Elm REPL " ++ Flags.version ++ " (Elm Platform " ++ Compiler.version ++ ")\n\
-    \  See usage examples at <https://github.com/elm-lang/elm-repl>\n\
-    \  Type :help for help, :exit to exit"
+  let
+    starter =
+      "---- elm repl " ++ Pkg.versionToString Compiler.version ++ " "
+  in
+    starter ++ replicate (80 - length starter) '-' ++ "\n"
+    ++ " :help for help, :exit to exit, more at <https://github.com/elm-lang/elm-repl>\n"
+    ++ "--------------------------------------------------------------------------------"
 
 
 -- SETTINGS
