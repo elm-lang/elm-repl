@@ -14,6 +14,7 @@ import System.IO (hPutStrLn, stderr)
 
 import qualified Environment as Env
 
+import qualified Elm.Compiler as Compiler
 import qualified Elm.Compiler.Module as Module
 import qualified Elm.Compiler.Type as Type
 import qualified Elm.Package as Pkg
@@ -111,7 +112,7 @@ nodeRunner =
       \var window = global || {};\n\
       \var context = { inputs:[], addListener:function(){}, node:{} };\n\
       \var repl = Elm.Repl.make(context);\n\
-      \var toString = Elm.Native.Show.make(context).toString;\n"
+      \var toString = Elm.Native.Utils.make(context).toString;\n"
     , "if ('", Env.lastVarString, "' in repl) {\n"
     , "  console.log(toString(repl.", Env.lastVarString, "));\n"
     , "}"
@@ -140,6 +141,7 @@ interfacePath :: Desc.Description -> FilePath
 interfacePath description =
     Path.stuffDirectory
         </> "build-artifacts"
+        </> Pkg.versionToString Compiler.version
         </> Pkg.toFilePath (Desc.name description)
         </> Pkg.versionToString (Desc.version description)
         </> "Repl.elmi"
