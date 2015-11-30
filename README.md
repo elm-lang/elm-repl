@@ -5,7 +5,7 @@ This tool lets you interact with values and functions directly.
 ### Install
 
 Install [Elm Platform][platform] to get `elm-repl`. Then make sure you have
-[node.js](http://nodejs.org/download/) installed because it is needed to
+[node.js](https://nodejs.org/en/download/) installed because it is needed to
 evaluate the generated JS.
 
 [platform]: https://github.com/elm-lang/elm-platform#elm-platform
