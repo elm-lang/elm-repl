@@ -9,6 +9,7 @@ import qualified System.Directory as Dir
 import qualified System.Exit as Exit
 import System.FilePath ((</>))
 import System.IO (hPutStrLn, stderr)
+import GHC.IO.Encoding (setLocaleEncoding, utf8)
 
 import qualified Completion
 import qualified Environment as Env
@@ -20,7 +21,8 @@ import qualified Elm.Package as Pkg
 
 main :: IO ()
 main =
-  do  flags <- CmdArgs.cmdArgs Flags.flags
+  do  setLocaleEncoding utf8
+      flags <- CmdArgs.cmdArgs Flags.flags
       stuffExisted <- Dir.doesDirectoryExist "elm-stuff"
       pkgJsonExisted <- Dir.doesFileExist "elm-package.json"
       exitCode <- runRepl flags
