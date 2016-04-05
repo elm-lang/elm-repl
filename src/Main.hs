@@ -1,10 +1,11 @@
 module Main where
 
-import Control.Applicative ((<$>),(<*>),(<|>))
+import Control.Applicative ((<|>))
 import Control.Monad (when)
 import qualified System.Console.CmdArgs as CmdArgs
 import System.Console.Haskeline
-    (Settings(Settings, autoAddHistory, complete, historyFile))
+  ( Settings(Settings, autoAddHistory, complete, historyFile)
+  )
 import qualified System.Directory as Dir
 import qualified System.Exit as Exit
 import System.FilePath ((</>))

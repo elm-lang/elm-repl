@@ -1,7 +1,6 @@
 module Read (input) where
 
 import qualified Data.Char as Char
-import Data.Functor ((<$>))
 import qualified Data.List as List
 import Text.Parsec
   ( Parsec, (<|>), anyChar, char, choice, eof, many, many1
