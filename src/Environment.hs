@@ -75,12 +75,12 @@ empty compiler interpreter =
 
 firstVar :: ByteString
 firstVar =
-    "tsol"
+    "t_s_o_l"
 
 
 lastVar :: ByteString
 lastVar =
-    "deltron3030"
+    "d_e_l_t_r_o_n_3_0_3_0"
 
 
 lastVarString :: String
@@ -90,7 +90,7 @@ lastVarString =
 
 toElmCode :: Env -> String
 toElmCode env =
-    unlines $ "module Repl where" : decls
+    unlines $ "module Repl exposing (..)" : decls
   where
     decls =
         concatMap Trie.elems [ imports env, adts env, defs env ]

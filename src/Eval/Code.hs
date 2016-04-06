@@ -8,6 +8,8 @@ import qualified Data.Binary as Binary
 import qualified Data.ByteString.Lazy.Char8 as BS
 import qualified Data.List as List
 import qualified Data.Map as Map
+import qualified Data.Text as Text
+import qualified Data.Text.IO as Text
 import System.Directory (doesFileExist, removeFile)
 import System.FilePath ((</>), (<.>), replaceExtension)
 import System.IO (hPutStrLn, stderr)
@@ -25,6 +27,13 @@ import qualified Elm.Utils as Utils
 
 eval :: (Maybe Env.DefName, String) -> Env.Task ()
 eval code =
+  let
+    tempElmPath =
+      "repl-temp-000" <.> "elm"
+
+    tempJsPath =
+      replaceExtension tempElmPath "js"
+  in
   do  oldEnv <- State.get
       let newEnv = Env.insert code oldEnv
 
@@ -41,18 +50,18 @@ eval code =
 
         Right () ->
             State.put newEnv
-  where
-    tempElmPath =
-        "repl-temp-000" <.> "elm"
-
-    tempJsPath =
-        replaceExtension tempElmPath "js"
 
 
 tryCompile :: FilePath -> FilePath -> Env.Env -> ExceptT String IO ()
 tryCompile tempElmPath tempJsPath env =
   do  run (Env.compilerPath env) (Env.flags env ++ elmArgs)
-      liftIO $ BS.appendFile tempJsPath nodeRunner
+
+      liftIO $ do
+        js <- Text.readFile tempJsPath
+        let (body, outro) = Text.breakOnEnd "var Elm = {};" js
+        let (intro, midtro) = Text.breakOnEnd lastVar body
+        Text.writeFile tempJsPath (Text.concat [ nodeHeader, intro, " = ", lastVar, midtro, nodeFooter, outro ])
+
       value <- run (Env.interpreterPath env) [tempJsPath]
       liftIO $ printIfNeeded value
   where
@@ -71,7 +80,9 @@ printIfNeeded rawValue =
 
     _ ->
       do  tipe <- getType
-          let value = init rawValue
+
+          let value =
+                init rawValue
 
           let isTooLong =
                 List.isInfixOf "\n" value
@@ -79,9 +90,11 @@ printIfNeeded rawValue =
                   || length value + 3 + length tipe > 80
 
           let tipeAnnotation =
-                if isTooLong
-                  then "\n    : " ++ List.intercalate "\n      " (lines tipe)
-                  else " : " ++ tipe
+                if isTooLong then
+                  "\n    : " ++ List.intercalate "\n      " (lines tipe)
+
+                else
+                  " : " ++ tipe
 
           putStrLn (value ++ tipeAnnotation)
 
@@ -100,23 +113,29 @@ run name args =
             throwError err
 
 
-nodeRunner :: BS.ByteString
-nodeRunner =
-    BS.pack $
-    concat
+nodeHeader :: Text.Text
+nodeHeader =
+  Text.concat
     [ "process.on('uncaughtException', function(err) {\n\
       \  process.stderr.write(err.toString());\n\
       \  process.exit(1);\n\
       \});\n\
-      \var document = document || {};\n\
-      \var window = global || {};\n\
-      \var context = { inputs:[], addListener:function(){}, node:{} };\n\
-      \var repl = Elm.Repl.make(context);\n\
-      \var toString = Elm.Native.Utils.make(context).toString;\n"
-    , "if ('", Env.lastVarString, "' in repl) {\n"
-    , "  console.log(toString(repl.", Env.lastVarString, "));\n"
-    , "}"
+      \var ", lastVar, ";"
     ]
+
+
+nodeFooter :: Text.Text
+nodeFooter =
+  Text.concat
+    [ "if (typeof ", lastVar, " !== 'undefined') {\n"
+    , "  console.log(_elm_lang$core$Native_Utils.toString(", lastVar, "));\n"
+    , "}\n"
+    ]
+
+
+lastVar :: Text.Text
+lastVar =
+  Text.pack Env.lastVarString
 
 
 getType :: IO String
