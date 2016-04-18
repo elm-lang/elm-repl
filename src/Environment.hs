@@ -9,7 +9,9 @@ import Data.Trie (Trie) -- TODO: Switch to a Char-based trie.
 import qualified Data.Trie as Trie
 
 
+
 -- TASKS
+
 
 type Task =
     RWST () () Env IO
@@ -21,7 +23,9 @@ run env task =
         return x
 
 
+
 -- USER INPUT
+
 
 data Input
     = Meta Config
@@ -50,7 +54,9 @@ data DefName
     deriving (Show, Eq)
 
 
+
 -- ENVIRONMENT
+
 
 data Env = Env
     { compilerPath  :: FilePath
