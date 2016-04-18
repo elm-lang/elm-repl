@@ -54,6 +54,19 @@ data DefName
     deriving (Show, Eq)
 
 
+needsPrint :: Maybe DefName -> Bool
+needsPrint maybeDefName =
+  case maybeDefName of
+    Just (VarDef _) ->
+      True
+
+    Nothing ->
+      True
+
+    Just _ ->
+      False
+
+
 
 -- ENVIRONMENT
 

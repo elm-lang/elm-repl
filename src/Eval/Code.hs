@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Eval.Code (eval) where
 
-import Control.Monad.Except (ExceptT, runExceptT, throwError)
+import Control.Monad.Except (ExceptT, runExceptT, throwError, when)
 import qualified Control.Monad.RWS as State
 import Control.Monad.Trans (liftIO)
 import qualified Data.Binary as Binary
@@ -38,8 +38,9 @@ eval code =
       let newEnv = Env.insert code oldEnv
 
       liftIO $ writeFile tempElmPath (Env.toElmCode newEnv)
+      let needsPrint = Env.needsPrint (fst code)
 
-      result <- liftIO (runExceptT (tryCompile tempElmPath tempJsPath newEnv))
+      result <- liftIO (runExceptT (tryCompile tempElmPath tempJsPath newEnv needsPrint))
 
       liftIO $ removeIfExists tempElmPath
       liftIO $ removeIfExists tempJsPath
@@ -52,16 +53,10 @@ eval code =
             State.put newEnv
 
 
-tryCompile :: FilePath -> FilePath -> Env.Env -> ExceptT String IO ()
-tryCompile tempElmPath tempJsPath env =
+tryCompile :: FilePath -> FilePath -> Env.Env -> Bool -> ExceptT String IO ()
+tryCompile tempElmPath tempJsPath env needsPrint =
   do  run (Env.compilerPath env) (Env.flags env ++ elmArgs)
-
-      liftIO $ do
-        js <- Text.readFile tempJsPath
-        let (body, outro) = Text.breakOnEnd "var Elm = {};" js
-        let (intro, midtro) = Text.breakOnEnd lastVar body
-        Text.writeFile tempJsPath (Text.concat [ nodeHeader, intro, " = ", lastVar, midtro, nodeFooter, outro ])
-
+      when needsPrint (liftIO (addHook tempJsPath))
       value <- run (Env.interpreterPath env) [tempJsPath]
       liftIO $ printIfNeeded value
   where
@@ -70,6 +65,22 @@ tryCompile tempElmPath tempJsPath env =
       , "--yes"
       , "--output=" ++ tempJsPath
       ]
+
+
+addHook :: FilePath -> IO ()
+addHook tempJsPath =
+  do  js <- Text.readFile tempJsPath
+      let (body, outro) = Text.breakOnEnd "var Elm = {};" js
+      let (intro, midtro) = Text.breakOnEnd lastVar body
+      Text.writeFile tempJsPath $ Text.concat $
+        [ nodeHeader
+        , intro
+        , " = "
+        , lastVar
+        , midtro
+        , nodeFooter
+        , outro
+        ]
 
 
 printIfNeeded :: String -> IO ()
