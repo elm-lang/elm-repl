@@ -15,7 +15,7 @@ import qualified Completion
 import qualified Environment as Env
 import qualified Flags
 import qualified Loop
-import qualified Elm.Compiler as Compiler
+import qualified Elm.Compiler as Elm
 import qualified Elm.Package as Pkg
 
 
@@ -91,7 +91,7 @@ welcomeMessage :: String
 welcomeMessage =
   let
     starter =
-      "---- elm repl " ++ Pkg.versionToString Compiler.version ++ " "
+      "---- elm-repl " ++ Pkg.versionToString Elm.version ++ " "
   in
     starter ++ replicate (80 - length starter) '-' ++ "\n"
     ++ " :help for help, :exit to exit, more at <https://github.com/elm-lang/elm-repl>\n"
@@ -113,7 +113,7 @@ initSettings =
 getDataDir :: IO FilePath
 getDataDir =
   do  root <- Dir.getAppUserDataDirectory "elm"
-      let dir = root </> "repl"
+      let dir = root </> Pkg.versionToString Elm.version </> "repl"
       Dir.createDirectoryIfMissing True dir
       return dir
 
