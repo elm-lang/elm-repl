@@ -159,7 +159,7 @@ getType =
 
 getTypeHelp :: ExceptT String IO String
 getTypeHelp =
-  do  description <- Desc.read Path.description
+  do  description <- Desc.read id Path.description
       binary <- liftIO (BS.readFile (interfacePath description))
       let types = Module.interfaceAliasedTypes (Binary.decode binary)
       case Map.lookup Env.lastVarString types of
