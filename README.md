@@ -12,7 +12,7 @@ evaluate the generated JS.
 
 ### Use
 
-You can type in expressions, definitions, ADTs, and module imports
+You can type in expressions, definitions, Union Types, and module imports
 using normal Elm syntax. 
 
 ```
@@ -23,7 +23,7 @@ using normal Elm syntax.
 "helloworld" : String
 ```
 
-The same can be done with definitions and ADTs:
+The same can be done with definitions and Union Types:
 
 ```
 > fortyTwo = 42
