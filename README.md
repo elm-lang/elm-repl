@@ -63,3 +63,7 @@ reachable from the directory where `elm-repl` is running:
 > String.reverse "flow"
 "wolf" : String
 ```
+
+You can import *your* modules too, so if you create a module named `MyThing` in
+your project, you can say `import MyThing` in the REPL and get access to all the
+values it exposes.
