@@ -15,7 +15,7 @@ evaluate the generated JS.
 You can type in expressions, definitions, union types, and module imports
 using normal Elm syntax. 
 
-```
+```elm
 > 1 + 1
 2 : number
 
@@ -25,7 +25,7 @@ using normal Elm syntax.
 
 The same can be done with definitions and union types:
 
-```
+```elm
 > fortyTwo = 42
 42 : number
 
@@ -54,7 +54,7 @@ The same can be done with definitions and union types:
 You can import standard libraries and any library
 reachable from the directory where `elm-repl` is running:
 
-```
+```elm
 > import String
 
 > String.length "hello"
