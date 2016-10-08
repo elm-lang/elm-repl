@@ -131,14 +131,15 @@ nodeHeader =
       \  process.stderr.write(err.toString());\n\
       \  process.exit(1);\n\
       \});\n\
-      \var ", lastVar, ";"
+      \var ", lastVar, ";\n"
     ]
 
 
 nodeFooter :: Text.Text
 nodeFooter =
   Text.concat
-    [ "if (typeof ", lastVar, " !== 'undefined') {\n"
+    [ "\n"
+    , "if (typeof ", lastVar, " !== 'undefined') {\n"
     , "  console.log(_elm_lang$core$Native_Utils.toString(", lastVar, "));\n"
     , "}\n"
     ]
