@@ -23,6 +23,9 @@ using normal Elm syntax.
 "helloworld" : String
 ```
 
+Please note that the first time you run elm-repl it might be slow, 
+because it needs to download the packages. 
+
 The same can be done with definitions and union types:
 
 ```elm
