@@ -1,7 +1,9 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Read (input) where
 
 import qualified Data.Char as Char
 import qualified Data.List as List
+import qualified Data.Text as Text
 import Text.Parsec
   ( Parsec, (<|>), anyChar, char, choice, eof, many, many1
   , manyTill, parse, satisfy, space, spaces, string
@@ -114,4 +116,5 @@ extractDefName src
         Just (Env.DataDef name)
 
   | otherwise =
-      Env.VarDef <$> Utils.isDeclaration src
+      do  names <- Utils.isDeclaration (Text.pack src)
+          return $ Env.VarDef (Text.unpack (Text.intercalate "$" names))

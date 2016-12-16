@@ -163,7 +163,7 @@ getTypeHelp =
   do  description <- Desc.read id Path.description
       binary <- liftIO (BS.readFile (interfacePath description))
       let types = Module.interfaceAliasedTypes (Binary.decode binary)
-      case Map.lookup Env.lastVarString types of
+      case Map.lookup lastVar types of
         Just tipe -> return (Type.toString tipe)
         Nothing -> throwError "Type signature not found!"
 
