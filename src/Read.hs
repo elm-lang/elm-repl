@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Read (input) where
+module Read (input, extractDefName) where
 
 import qualified Data.Char as Char
 import qualified Data.List as List
@@ -52,6 +52,7 @@ config =
       case flag of
         "exit"  -> ok Env.Exit
         "reset" -> ok Env.Reset
+        "list"  -> ok Env.List
         "help"  -> ok (Env.Help Nothing)
         "flags" -> ok (Env.InfoFlags Nothing) <|> flags
         _       -> return $ Env.Help (Just flag)

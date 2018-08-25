@@ -17,14 +17,9 @@ complete =
 lookupCompletions :: String -> Env.Task [Completion]
 lookupCompletions string =
     do  env <- get
-        let defs = adjustDefs (Env.defs env)
+        let defs = Trie.unionL cmds $ Env.actualDefs env
         return (completions string defs)
     where
-      adjustDefs defs =
-          Trie.unionL cmds $
-          Trie.delete Env.firstVar $
-          Trie.delete Env.lastVar defs
-
       cmds =
           Trie.fromList
               [ (":exit", "")

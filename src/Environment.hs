@@ -44,6 +44,7 @@ data Config
     | Help (Maybe String)
     | Exit
     | Reset
+    | List
     deriving (Show, Eq)
 
 
@@ -66,6 +67,10 @@ needsPrint maybeDefName =
     Just _ ->
       False
 
+getName :: DefName -> String
+getName (DataDef s) = s
+getName (Import s) = s
+getName (VarDef s) = s
 
 
 -- ENVIRONMENT
@@ -81,6 +86,10 @@ data Env = Env
     }
     deriving Show
 
+
+actualDefs :: Env -> Trie String
+actualDefs env = Trie.delete firstVar $
+          Trie.delete lastVar (defs env)
 
 empty :: FilePath -> FilePath -> Env
 empty compiler interpreter =

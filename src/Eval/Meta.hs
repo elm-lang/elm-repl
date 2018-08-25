@@ -4,9 +4,12 @@ module Eval.Meta (eval) where
 import Control.Monad.State (get, modify)
 import Control.Monad.Trans (liftIO)
 import qualified Data.List as List
+import Data.Maybe
+import qualified Data.Trie as Trie
 import System.Exit (ExitCode(ExitSuccess))
 
 import qualified Environment as Env
+import Read (extractDefName)
 
 
 eval :: Env.Config -> Env.Task (Maybe ExitCode)
@@ -18,6 +21,10 @@ eval config =
     Env.Help m ->
         do displayErr "Bad command\n" m
            display helpInfo
+
+    Env.List ->
+        do  env <- get
+            display $ unlines $ map Env.getName $ concatMap (maybeToList . extractDefName) $ Trie.elems $ Env.actualDefs env
 
     Env.InfoFlags m ->
         do displayErr "Bad flag\n" m
@@ -89,4 +96,5 @@ helpInfo =
     \  :help\t\t\tList available commands\n\
     \  :flags\t\tManipulate flags sent to elm compiler\n\
     \  :reset\t\tClears all previous imports\n\
+    \  :list\t\t\tLists all defined variables\n\
     \  :exit\t\t\tExits elm-repl\n"
